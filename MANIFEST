@@ -1,3 +1,4 @@
+Changes
 lib/.perlcriticrc
 lib/Test/Expander.pm
 lib/Test/Expander.pod
@@ -26,3 +27,4 @@ t/Test/Expander/NoCLASS/NoMETHOD.t
 t/Test/Expander/require_ok.t
 t/Test/Expander/throws_ok.t
 t/Test/Expander/use_ok.t
+test.results

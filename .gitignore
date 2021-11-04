@@ -1,4 +1,11 @@
 Makefile
+MYMETA.*
+blib
 build
+cover_db
+pm_to_blib
+test.results
+*.bak
+*.lock
 *.old
 *.tar.gz
