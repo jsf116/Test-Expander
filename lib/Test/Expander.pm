@@ -7,7 +7,7 @@ use v5.14;
 use warnings
   FATAL    => qw(all),
   NONFATAL => qw(deprecated exec internal malloc newline portable recursion);
-no  warnings  qw(experimental);
+no if ($] >= 5.018), warnings => 'experimental';
 
 use Const::Fast;
 use File::chdir;
