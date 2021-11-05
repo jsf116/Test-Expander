@@ -1,7 +1,7 @@
 ## no critic (ProhibitStringyEval ProhibitSubroutinePrototypes RequireLocalizedPunctuationVars)
 package Test::Expander;
 
-our $VERSION = '1.0.1';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '1.0.2';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use v5.14;
 use warnings
