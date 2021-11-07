@@ -1,5 +1,11 @@
 Changelog for Test-Expander
 
+1.0.3 2021-07-11 11:12:47 UTC
+    - Use 'IO::Select' instead of self-implemented dummy class for testing.
+
+1.0.2 2021-05-11 19:54:23 UTC
+    - Deativate experimental features depending on Perl version.
+
 1.0.1 2021-04-11 16:42:38 UTC
     - Test configuration fixed.
     - Documentation improved.
