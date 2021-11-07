@@ -1,5 +1,7 @@
 use v5.14;
-use warnings;
+use warnings
+  FATAL    => qw(all),
+  NONFATAL => qw(deprecated exec internal malloc newline portable recursion);
 
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence

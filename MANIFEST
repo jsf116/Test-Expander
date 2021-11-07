@@ -14,7 +14,6 @@ t/Test/Expander/_error.t
 t/Test/Expander/_newTestMessage.t
 t/Test/Expander/_setEnv.t
 t/Test/Expander/_useImports.t
-t/Test/Expander/Boilerplate.pm
 t/Test/Expander/compare_ok.t
 t/Test/Expander/compare_ok/expected
 t/Test/Expander/compare_ok/got
