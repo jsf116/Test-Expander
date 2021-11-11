@@ -14,6 +14,7 @@ WriteMakefile(
 	MIN_PERL_VERSION => '5.014',
 	NAME             => 'Test::Expander',
 	PREREQ_PM        => {
+		'B'                     => 0,
 		'Const::Fast'           => 0,
 		'Exporter'              => 0,
 		'File::chdir'           => 0,
@@ -25,6 +26,7 @@ WriteMakefile(
 		'Test::Files'           => 0,
 		'Test::Output'          => 0,
 		'Test::Warn'            => 0,
+		'Test2::Tools::Basic'   => 0,
 		'Test2::Tools::Explain' => 0,
 		'Test2::V0'             => 0,
 	},
