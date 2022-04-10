@@ -2,7 +2,7 @@
 package Test::Expander;
 
 # The versioning is conform with https://semver.org
-our $VERSION = '1.0.7';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '1.1.1';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use v5.14;
 use warnings
@@ -144,10 +144,7 @@ sub lives_ok (&;$) {
   my ($coderef, $description) = @_;
 
   eval { $coderef->() };
-  {
-    no warnings qw(redundant);
-    printf($UNEXPECTED_EXCEPTION[!!$@], $@);
-  }
+  { no warnings; printf($UNEXPECTED_EXCEPTION[!!$@], $@); } ## no critic (ProhibitNoWarnings)
 
   return ok(!$@, $description);
 }

@@ -1,6 +1,6 @@
 package Test::Expander::Constants;
 
-our $VERSION = '1.0.7';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '1.1.1';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use v5.14;
 use warnings
