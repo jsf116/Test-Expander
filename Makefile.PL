@@ -31,7 +31,6 @@ WriteMakefile(
 		'Test2::V0'             => 0,
 	},
 	TEST_REQUIRES    => {
-		'Clone'                 => 0,
 		'Test::Simple'          => 0,
 	},
 	VERSION_FROM     => 'lib/Test/Expander.pm',
