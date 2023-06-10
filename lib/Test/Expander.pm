@@ -2,28 +2,26 @@
 package Test::Expander;
 
 # The versioning is conform with https://semver.org
-our $VERSION = '1.1.1';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.0.0';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
-  FATAL    => qw( all ),
-  NONFATAL => qw( deprecated exec internal malloc newline portable recursion );
-use feature   qw( switch );
-no if ( $] >= 5.018 ), warnings => 'experimental';
+  FATAL      => qw( all ),
+  NONFATAL   => qw( deprecated exec internal malloc newline portable recursion );
+use feature      qw( switch );
+no if ( $] >= 5.018 ),
+    warnings => qw( experimental );
 
-use B                qw( svref_2object );
 use Const::Fast;
 use File::chdir;
-use File::Temp       qw( tempdir tempfile );
+use File::Temp        qw( tempdir tempfile );
 use Importer;
-use Path::Tiny       qw( cwd path );
-use Scalar::Readonly qw( readonly_on );
-use Test::Files;
-use Test::Output;
-use Test::Warn;
+use Module::Functions qw( get_public_functions );
+use Path::Tiny        qw( cwd path );
+use Scalar::Readonly  qw( readonly_on );
 use Test2::Tools::Basic;
 use Test2::Tools::Explain;
-use Test2::V0        qw();
+use Test2::V0         qw();
 
 use Test::Expander::Constants qw(
   $ANY_EXTENSION
@@ -36,9 +34,9 @@ use Test::Expander::Constants qw(
   $REPLACEMENT $REQUIRE_DESCRIPTION $REQUIRE_IMPLEMENTATION
   $SEARCH_PATTERN $SET_ENV_VAR $SET_TO
   $TOP_DIR_IN_PATH $TRUE
-  $UNKNOWN_OPTION $USE_DESCRIPTION $USE_IMPLEMENTATION
+  $UNEXPECTED_EXCEPTION $UNKNOWN_OPTION $USE_DESCRIPTION $USE_IMPLEMENTATION
   $VERSION_NUMBER
-  @UNEXPECTED_EXCEPTION
+  %CONSTANTS_TO_EXPORT
 );
 
 readonly_on( $VERSION );
@@ -46,14 +44,10 @@ readonly_on( $VERSION );
 our ( $CLASS, $METHOD, $METHOD_REF, $TEMP_DIR, $TEMP_FILE );
 our @EXPORT = (
   @{ Const::Fast::EXPORT },
-  @{ Test::Files::EXPORT },
-  @{ Test::Output::EXPORT },
-  @{ Test::Warn::EXPORT },
   @{ Test2::Tools::Explain::EXPORT },
   @{ Test2::V0::EXPORT },
   qw( tempdir tempfile ),
   qw( cwd path ),
-  qw( $CLASS $METHOD $METHOD_REF $TEMP_DIR $TEMP_FILE ),
   qw( BAIL_OUT dies_ok is_deeply lives_ok new_ok require_ok throws_ok use_ok ),
 );
 
@@ -70,65 +64,13 @@ sub dies_ok ( &;$ ) {
 sub import {
   my ( $class, @exports ) = @_;
 
-  my %options;
-  while ( my $optionName = shift( @exports ) ) {
-    given ( $optionName ) {
-      when ( '-tempdir' ) {
-        my $optionValue = shift( @exports );
-        die( sprintf( $INVALID_VALUE, $optionName, $optionValue ) ) if ref( $optionValue ) ne 'HASH';
-        $TEMP_DIR = tempdir( CLEANUP => 1, %$optionValue );
-      }
-      when ( '-tempfile' ) {
-        my $optionValue = shift( @exports );
-        die( sprintf( $INVALID_VALUE, $optionName, $optionValue ) ) if ref( $optionValue ) ne 'HASH';
-        my $fileHandle;
-        ( $fileHandle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$optionValue );
-      }
-      when ( /^-\w/ ) {
-        $options{ $optionName } = shift( @exports );
-      }
-      default {
-        die( sprintf( $UNKNOWN_OPTION, $optionName, shift( @exports ) // '' ) );
-      }
-    }
-  }
-
   my $testFile = path( ( caller( 2 ) )[ 1 ] ) =~ s{^/}{}r;  ## no critic (ProhibitMagicNumbers)
-  my ( $testRoot ) = $testFile =~ $TOP_DIR_IN_PATH;
-  unless ( exists( $options{ -target } ) ) {
-    my $testee = path( $testFile )->relative( $testRoot )->parent;
-    $options{ -target } = join( '::', split( qr{/}, $testee ) )
-      if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
-  }
+  my $options  = _parseOptions( \@exports, $testFile );
 
-  $METHOD = path( $testFile )->basename( $ANY_EXTENSION );
-  my $startDir = cwd();
-  _setEnv( $METHOD, $options{ -target }, $testFile );
+  _setEnv( $options->{ -target }, $testFile );
 
-  Test2::V0->import( %options );
-
-  if ( $CLASS ) {
-    readonly_on( $CLASS );
-    $NOTE->( $SET_TO, '$CLASS', $CLASS );
-    $METHOD_REF = $CLASS->can( $METHOD );
-    $METHOD     = undef unless( $METHOD_REF );
-  }
-  if ( $METHOD ) {
-    readonly_on( $METHOD );
-    $NOTE->( $SET_TO, '$METHOD', $METHOD );
-  }
-  if ( $METHOD_REF ) {
-    readonly_on( $METHOD_REF );
-    $NOTE->( $SET_TO, '$METHOD_REF', '\&' . $CLASS . '::' . svref_2object( $METHOD_REF )->GV->NAME );
-  }
-  if ( $TEMP_DIR ) {
-    readonly_on( $TEMP_DIR );
-    $NOTE->( $SET_TO, '$TEMP_DIR', $TEMP_DIR );
-  }
-  if ( $TEMP_FILE ) {
-    readonly_on( $TEMP_FILE );
-    $NOTE->( $SET_TO, '$TEMP_FILE', $TEMP_FILE );
-  }
+  _exportSymbols( $options );
+  Test2::V0->import( %$options );
 
   Importer->import_into( $class, scalar( caller ), () );
 
@@ -145,7 +87,8 @@ sub lives_ok ( &;$ ) {
   my ( $coderef, $description ) = @_;
 
   eval { $coderef->() };
-  { no warnings; printf( $UNEXPECTED_EXCEPTION[ !!$@ ], $@ ); } ## no critic (ProhibitNoWarnings)
+  diag( $UNEXPECTED_EXCEPTION->( $@ ) ) if $@;
+  # { no warnings; printf( $UNEXPECTED_EXCEPTION[ !!$@ ], $@ ); } ## no critic (ProhibitNoWarnings)
 
   return ok( !$@, $description );
 }
@@ -206,10 +149,84 @@ sub _error {
   return $error;
 }
 
+sub _exportSymbols {
+  my ( $options ) = @_;
+
+  foreach my $var ( sort keys( %CONSTANTS_TO_EXPORT ) ) {   # Export defined constants
+    no strict qw( refs );
+    my $value = eval( "${ \$var }" ) or next;
+    readonly_on( ${ __PACKAGE__ . '::' . $var =~ s/^.//r } );
+    push( @EXPORT, $var );
+    $NOTE->( $SET_TO, $var, $CONSTANTS_TO_EXPORT{ $var }->( $value, $CLASS ) );
+
+    if ( $var eq '$CLASS' ) {                               # Export method constants only if class is known
+      $METHOD_REF = $CLASS->can( $METHOD );
+      $METHOD     = undef unless( $METHOD_REF );
+    }
+  }
+
+  return;
+}
+
 sub _newTestMessage {
   my ( $class ) = @_;
 
   return $@ ? sprintf( $NEW_FAILED, $class, _error() ) : sprintf( $NEW_SUCCEEDED, $class, $class );
+}
+
+sub _parseOptions {
+  my ( $exports, $testFile ) = @_;
+
+  my $options = {};
+  while ( my $optionName = shift( @$exports ) ) {
+    given ( $optionName ) {
+      when ( '-method' ) {
+        my $optionValue = shift( @$exports );
+        die( sprintf( $INVALID_VALUE, $optionName, $optionValue ) ) if ref( $optionValue );
+        $METHOD = $options->{ -method } = $optionValue;
+      }
+      when ( '-target' ) {
+        my $optionValue = shift( @$exports );               # Do not load module only if its name is undef
+        $options->{ -target } = $optionValue if defined( $optionValue );
+      }
+      when ( '-tempdir' ) {
+        my $optionValue = shift( @$exports );
+        die( sprintf( $INVALID_VALUE, $optionName, $optionValue ) ) if ref( $optionValue ) ne 'HASH';
+        $TEMP_DIR = tempdir( CLEANUP => 1, %$optionValue );
+      }
+      when ( '-tempfile' ) {
+        my $optionValue = shift( @$exports );
+        die( sprintf( $INVALID_VALUE, $optionName, $optionValue ) ) if ref( $optionValue ) ne 'HASH';
+        my $fileHandle;
+        ( $fileHandle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$optionValue );
+      }
+      when ( /^-\w/ ) {
+        $options->{ $optionName } = shift( @$exports );
+      }
+      default {
+        die( sprintf( $UNKNOWN_OPTION, $optionName, shift( @$exports ) // '' ) );
+      }
+    }
+  }
+
+  unless ( exists( $options->{ -target } ) ) {
+    my ( $testRoot ) = $testFile =~ $TOP_DIR_IN_PATH;
+    my $testee       = path( $testFile )->relative( $testRoot )->parent;
+    $options->{ -target } = $testee =~ s{/}{::}gr if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
+  }
+  elsif  ( !defined( $options->{ -target } ) ) {
+    delete( $options->{ -target } );                        # Do not load any module if '-target => undef'
+  }
+  $CLASS = $options->{ -target } if exists( $options->{ -target } );
+
+  if ( exists( $options->{ -method } ) ) {
+    delete( $options->{ -method } );
+  }
+  else {
+    $METHOD = path( $testFile )->basename( $ANY_EXTENSION );
+  }
+
+  return $options;
 }
 
 sub _readEnvFile {
@@ -218,6 +235,7 @@ sub _readEnvFile {
   my @lines = path( $envFile )->lines( { chomp => 1 } );
   my %env;
   while ( my ( $index, $line ) = each( @lines ) ) {
+                                                            ## no critic (ProhibitUnusedCapture)
     next unless $line =~ /^ (?<name> \w+) \s* (?: = \s* (?<value> \S .*) | $ )/x;
     if ( exists( $+{ value } ) ) {
       $env{ $+{ name } } = eval( $+{ value } );
@@ -234,7 +252,7 @@ sub _readEnvFile {
 }
 
 sub _setEnv {
-  my ( $method, $class, $testFile ) = @_;
+  my ( $class, $testFile ) = @_;
 
   my $envFound = $FALSE;
   my $newEnv   = {};

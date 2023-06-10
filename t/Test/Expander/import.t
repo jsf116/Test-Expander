@@ -8,8 +8,6 @@ BEGIN {
   use Const::Fast;
   use File::Temp qw( tempdir tempfile );
   use Path::Tiny qw( cwd path );
-  use Test::Output;
-  use Test::Warn;
   use Test2::Tools::Explain;
   use Test2::V0;
   @functions = (
@@ -31,7 +29,7 @@ use Test::Builder::Tester     tests => @functions + @variables + 4;
 
 use Test::Expander            -target   => 'Test::Expander',
                               -tempdir  => { CLEANUP => 1 },
-                              -tempfile => { UNLINK => 1 };
+                              -tempfile => { UNLINK  => 1 };
 use Test::Expander::Constants qw( $INVALID_VALUE $UNKNOWN_OPTION );
 
 $METHOD     //= 'import';

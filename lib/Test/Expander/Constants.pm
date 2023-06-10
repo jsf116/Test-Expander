@@ -1,12 +1,13 @@
 package Test::Expander::Constants;
 
-our $VERSION = '1.1.1';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.0.0';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
   FATAL    => qw( all ),
   NONFATAL => qw( deprecated exec internal malloc newline portable recursion );
 
+use B                qw( svref_2object );
 use Const::Fast;
 use Exporter         qw( import );
 use PadWalker        qw( peek_our );
@@ -34,11 +35,18 @@ const our $SET_ENV_VAR            => "Set environment variable '%s' to '%s' from
 const our $SET_TO                 => "Set %s to '%s'";
 const our $TOP_DIR_IN_PATH        => qr{^ ( [^/]+ ) }x;
 const our $TRUE                   => 1;
+const our $UNEXPECTED_EXCEPTION   => sub { "Unexpectedly caught exception:\n%s\n", @_ };
 const our $UNKNOWN_OPTION         => "Unknown option '%s' => '%s' supplied.\n";
 const our $USE_DESCRIPTION        => 'use %s;%s';
 const our $USE_IMPLEMENTATION     => 'package %s; use %s%s; 1';
 const our $VERSION_NUMBER         => qr/^ \d+ (?: \. \d+ )* $/x;
-const our @UNEXPECTED_EXCEPTION   => ( '', "Unexpectedly caught exception:\n%s\n" );
+const our %CONSTANTS_TO_EXPORT    => (
+  '$CLASS'      => sub { $_[ 0 ] },
+  '$METHOD'     => sub { $_[ 0 ] },
+  '$METHOD_REF' => sub { '\&' . $_[ 1 ] . '::' . svref_2object( $_[ 0 ] )->GV->NAME },
+  '$TEMP_DIR'   => sub { $_[ 0 ] },
+  '$TEMP_FILE'  => sub { $_[ 0 ] },
+);
 
 push( our @EXPORT_OK, keys( %{ peek_our( 0 ) } ) );
 

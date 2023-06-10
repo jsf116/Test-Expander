@@ -17,6 +17,9 @@
     # a temporary directory is created with a name corresponing to the supplied template:
     use Test::Expander -target => 'My::Class', -tempdir => { TEMPLATE => 'my_dir.XXXXXXXX' };
 
+    # Does not try to determine, which class and method are to be tested:
+    use Test::Expander -target => undef;
+
 # DESCRIPTION
 
 **Test::Expander** combines all advanced possibilities provided by [Test2::V0](https://metacpan.org/pod/Test2::V0)
@@ -31,7 +34,7 @@ if the path to the test file is in accordance with the name of class to be teste
 file **t/Foo/Bar/baz.t** -> class **Foo::Bar**.
 
 A similar recognition is provided in regard to the method / subroutine to be tested
-(see variables **$METHOD** and **METHOD\_REF** below) if the base name (without extension) of test file is
+(see variables **$METHOD** and **$METHOD\_REF** below) if the base name (without extension) of test file is
 identical with the name of this method / subroutine i.e. file **t/Foo/Bar/baz.t** -> method **Foo::Bar::bar**.
 
 Finally, a configurable setting of specific environment variables is provided so that
@@ -159,9 +162,10 @@ and often used in older tests but not supported by [Test2::V0](https://metacpan.
 - some functions exported by default from [Test::Exception](https://metacpan.org/pod/Test::Exception)
 and often used in older tests but not supported by [Test2::V0](https://metacpan.org/pod/Test2::V0):
     - dies\_ok,
-    - explain,
     - lives\_ok,
     - throws\_ok,
+- function exported by default from [Test2::Tools::Explain](https://metacpan.org/pod/Test2::Tools::Explain):
+    - explain,
 - function exported by default from [Const::Fast](https://metacpan.org/pod/Const::Fast):
     - const,
 - some functions exported by request from [File::Temp](https://metacpan.org/pod/File::Temp):
