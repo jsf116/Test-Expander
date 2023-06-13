@@ -35,7 +35,7 @@ const our $SET_ENV_VAR            => "Set environment variable '%s' to '%s' from
 const our $SET_TO                 => "Set %s to '%s'";
 const our $TOP_DIR_IN_PATH        => qr{^ ( [^/]+ ) }x;
 const our $TRUE                   => 1;
-const our $UNEXPECTED_EXCEPTION   => sub { "Unexpectedly caught exception:\n%s\n", @_ };
+const our $UNEXPECTED_EXCEPTION   => 'Unexpectedly caught exception: ';
 const our $UNKNOWN_OPTION         => "Unknown option '%s' => '%s' supplied.\n";
 const our $USE_DESCRIPTION        => 'use %s;%s';
 const our $USE_IMPLEMENTATION     => 'package %s; use %s%s; 1';

@@ -64,8 +64,12 @@ sub dies_ok ( &;$ ) {
 sub import {
   my ( $class, @exports ) = @_;
 
-  my $testFile = path( ( caller( 2 ) )[ 1 ] ) =~ s{^/}{}r;  ## no critic (ProhibitMagicNumbers)
-  my $options  = _parseOptions( \@exports, $testFile );
+  my $frameIndex = 0;
+  my $testFile;
+  while( my @currentFrame = caller( $frameIndex++ ) ) {
+    $testFile = path( $currentFrame[ 1 ] ) =~ s{^/}{}r;
+  }
+  my $options = _parseOptions( \@exports, $testFile );
 
   _setEnv( $options->{ -target }, $testFile );
 
@@ -87,8 +91,7 @@ sub lives_ok ( &;$ ) {
   my ( $coderef, $description ) = @_;
 
   eval { $coderef->() };
-  diag( $UNEXPECTED_EXCEPTION->( $@ ) ) if $@;
-  # { no warnings; printf( $UNEXPECTED_EXCEPTION[ !!$@ ], $@ ); } ## no critic (ProhibitNoWarnings)
+  diag( $UNEXPECTED_EXCEPTION . $@ ) if $@;
 
   return ok( !$@, $description );
 }
@@ -209,13 +212,10 @@ sub _parseOptions {
     }
   }
 
-  unless ( exists( $options->{ -target } ) ) {
+  unless ( exists( $options->{ -target } ) ) {              # Try to determine class / module autmatically
     my ( $testRoot ) = $testFile =~ $TOP_DIR_IN_PATH;
     my $testee       = path( $testFile )->relative( $testRoot )->parent;
     $options->{ -target } = $testee =~ s{/}{::}gr if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
-  }
-  elsif  ( !defined( $options->{ -target } ) ) {
-    delete( $options->{ -target } );                        # Do not load any module if '-target => undef'
   }
   $CLASS = $options->{ -target } if exists( $options->{ -target } );
 
