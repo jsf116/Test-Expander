@@ -22,12 +22,12 @@ BEGIN {
 }
 
 use Scalar::Readonly          qw( readonly_off );
-use Test::Builder::Tester     tests => @functions + @variables + 7;
+use Test::Builder::Tester     tests => @functions + @variables + 12;
 
 use Test::Expander            -target   => 'Test::Expander',
                               -tempdir  => { CLEANUP => 1 },
                               -tempfile => { UNLINK  => 1 };
-use Test::Expander::Constants qw( $INVALID_VALUE $SET_TO $UNKNOWN_OPTION );
+use Test::Expander::Constants qw( $INVALID_DIRECTORY $INVALID_VALUE $SET_TO $REQUIRE_DESCRIPTION $UNKNOWN_OPTION );
 
 foreach my $function ( sort @functions ) {
   my $title = "$CLASS->can('$function')";
@@ -44,6 +44,61 @@ foreach my $variable ( sort @variables ) {
 }
 
 my ( $title, $expected );
+
+$title    = "invalid value type of '-lib'";
+$expected = $INVALID_VALUE =~ s/%s/.+/gr;
+readonly_off( $CLASS );
+readonly_off( $METHOD );
+readonly_off( $METHOD_REF );
+readonly_off( $TEMP_DIR );
+readonly_off( $TEMP_FILE );
+test_out( "ok 1 - $title" );
+like( dies { $CLASS->$METHOD( -lib => {} ) }, qr/$expected/, $title );
+test_test( $title );
+
+$title    = "invalid directory type within '-lib'";
+$expected = $INVALID_DIRECTORY =~ s/%s/.+/gr;
+readonly_off( $CLASS );
+readonly_off( $METHOD );
+readonly_off( $METHOD_REF );
+readonly_off( $TEMP_DIR );
+readonly_off( $TEMP_FILE );
+test_out( "ok 1 - $title" );
+like( dies { $CLASS->$METHOD( -lib => [ {} ] ) }, qr/$expected/, $title );
+test_test( $title );
+
+$title    = "invalid directory value within '-lib'";
+$expected = $INVALID_DIRECTORY =~ s/%s/.+/gr;
+readonly_off( $CLASS );
+readonly_off( $METHOD );
+readonly_off( $METHOD_REF );
+readonly_off( $TEMP_DIR );
+readonly_off( $TEMP_FILE );
+test_out( "ok 1 - $title" );
+like( dies { $CLASS->$METHOD( -lib => [ 'ref(' ] ) }, qr/$expected/, $title );
+test_test( $title );
+
+path( $TEMP_DIR )->child( 'my_root' )->mkdir;
+path( $TEMP_DIR )->child( qw( my_root foo.pm ) )->spew( "package foo;\n1;\n" );
+$title = "valid value of '-lib' containing expression to be substituted (successfully executed)";
+readonly_off( $CLASS );
+readonly_off( $METHOD );
+readonly_off( $METHOD_REF );
+readonly_off( $TEMP_DIR );
+readonly_off( $TEMP_FILE );
+test_out( "ok 1 - $title" );
+{
+  my $mockImporter = mock 'Importer'  => ( override => [ import_into    => sub {} ] );
+  my $mockSelf     = mock $CLASS      => ( override => [ _exportSymbols => sub {} ] );
+  my $mockTest2    = mock 'Test2::V0' => ( override => [ import         => sub {} ] );
+  is( $CLASS->$METHOD( -lib => [ 'path( $TEMP_DIR )->child( qw( my_root ) )->stringify' ] ), undef, $title );
+}
+test_test( $title );
+
+$title = sprintf( $REQUIRE_DESCRIPTION, 'foo', '' );
+test_out( "ok 1 - $title" );
+require_ok( 'foo', $title );
+test_test( $title );
 
 $title    = "invalid value of '-method'";
 $expected = $INVALID_VALUE =~ s/%s/.+/gr;
@@ -116,9 +171,11 @@ test_out(
     "ok 1 - $title",
   )
 );
-my $mockImporter = mock 'Importer'  => ( override => [ import_into => sub {} ] );
-my $mockTest2    = mock 'Test2::V0' => ( override => [ import      => sub {} ] );
-is( dies { $CLASS->$METHOD( -method => 'dummy', -target => undef ) }, $expected, $title );
+{
+  my $mockImporter = mock 'Importer'  => ( override => [ import_into => sub {} ] );
+  my $mockTest2    = mock 'Test2::V0' => ( override => [ import      => sub {} ] );
+  is( dies { $CLASS->$METHOD( -method => 'dummy', -target => undef ) }, $expected, $title );
+}
 test_test( $title );
 
 $title    = "valid '-method' (assigned method name)";

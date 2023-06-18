@@ -8,27 +8,26 @@ use strict;
 use warnings
   FATAL      => qw( all ),
   NONFATAL   => qw( deprecated exec internal malloc newline portable recursion );
-use feature      qw( switch );
+use feature     qw( switch );
 no if ( $] >= 5.018 ),
     warnings => qw( experimental );
 
 use Const::Fast;
 use File::chdir;
-use File::Temp        qw( tempdir tempfile );
+use File::Temp       qw( tempdir tempfile );
 use Importer;
-use Module::Functions qw( get_public_functions );
-use Path::Tiny        qw( cwd path );
-use Scalar::Readonly  qw( readonly_on );
+use Path::Tiny       qw( cwd path );
+use Scalar::Readonly qw( readonly_on );
 use Test2::Tools::Basic;
 use Test2::Tools::Explain;
-use Test2::V0         qw();
+use Test2::V0        qw();
 
 use Test::Expander::Constants qw(
   $ANY_EXTENSION
   $CLASS_HIERARCHY_LEVEL
-  $ERROR_WAS $EXCEPTION_PREFIX
+  $DIE $ERROR_WAS $EXCEPTION_PREFIX
   $FALSE
-  $INVALID_ENV_ENTRY $INVALID_VALUE
+  $INVALID_DIRECTORY $INVALID_ENV_ENTRY $INVALID_VALUE
   $KEEP_ENV_VAR
   $NEW_FAILED $NEW_SUCCEEDED $NOTE
   $REPLACEMENT $REQUIRE_DESCRIPTION $REQUIRE_IMPLEMENTATION
@@ -142,6 +141,36 @@ sub use_ok ( $;@ ) {
   return $requireResult;
 }
 
+sub _determineTestee {
+  my ( $options, $testFile ) = @_;
+
+  if ( $options->{ -lib } ) {
+    foreach my $directory ( @{ $options->{ -lib } } ) {
+      $DIE->( $INVALID_DIRECTORY, $directory, 'invalid type' ) if ref( $directory );
+      my $incEntry = eval( $directory );
+      $DIE->( $INVALID_DIRECTORY, $directory, $@ ) if $@;
+      unshift( @INC, $incEntry );
+    }
+    delete( $options->{ -lib } );
+  }
+
+  if ( exists( $options->{ -method } ) ) {
+    delete( $options->{ -method } );
+  }
+  else {
+    $METHOD = path( $testFile )->basename( $ANY_EXTENSION );
+  }
+
+  unless ( exists( $options->{ -target } ) ) {              # Try to determine class / module autmatically
+    my ( $testRoot ) = $testFile =~ $TOP_DIR_IN_PATH;
+    my $testee       = path( $testFile )->relative( $testRoot )->parent;
+    $options->{ -target } = $testee =~ s{/}{::}gr if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
+  }
+  $CLASS = $options->{ -target } if exists( $options->{ -target } );
+
+  return $options;
+}
+
 sub _error {
   my ( $searchString, $replacementString ) = @_;
 
@@ -183,9 +212,14 @@ sub _parseOptions {
   my $options = {};
   while ( my $optionName = shift( @$exports ) ) {
     given ( $optionName ) {
+      when ( '-lib' ) {
+        my $optionValue = shift( @$exports );
+        $DIE->( $INVALID_VALUE, $optionName, $optionValue ) if ref( $optionValue ) ne 'ARRAY';
+        $options->{ -lib } = $optionValue;
+      }
       when ( '-method' ) {
         my $optionValue = shift( @$exports );
-        die( sprintf( $INVALID_VALUE, $optionName, $optionValue ) ) if ref( $optionValue );
+        $DIE-> ( $INVALID_VALUE, $optionName, $optionValue ) if ref( $optionValue );
         $METHOD = $options->{ -method } = $optionValue;
       }
       when ( '-target' ) {
@@ -194,12 +228,12 @@ sub _parseOptions {
       }
       when ( '-tempdir' ) {
         my $optionValue = shift( @$exports );
-        die( sprintf( $INVALID_VALUE, $optionName, $optionValue ) ) if ref( $optionValue ) ne 'HASH';
+        $DIE->( $INVALID_VALUE, $optionName, $optionValue ) if ref( $optionValue ) ne 'HASH';
         $TEMP_DIR = tempdir( CLEANUP => 1, %$optionValue );
       }
       when ( '-tempfile' ) {
         my $optionValue = shift( @$exports );
-        die( sprintf( $INVALID_VALUE, $optionName, $optionValue ) ) if ref( $optionValue ) ne 'HASH';
+        $DIE->( $INVALID_VALUE, $optionName, $optionValue ) if ref( $optionValue ) ne 'HASH';
         my $fileHandle;
         ( $fileHandle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$optionValue );
       }
@@ -207,26 +241,12 @@ sub _parseOptions {
         $options->{ $optionName } = shift( @$exports );
       }
       default {
-        die( sprintf( $UNKNOWN_OPTION, $optionName, shift( @$exports ) // '' ) );
+        $DIE->( $UNKNOWN_OPTION, $optionName, shift( @$exports ) // '' );
       }
     }
   }
 
-  unless ( exists( $options->{ -target } ) ) {              # Try to determine class / module autmatically
-    my ( $testRoot ) = $testFile =~ $TOP_DIR_IN_PATH;
-    my $testee       = path( $testFile )->relative( $testRoot )->parent;
-    $options->{ -target } = $testee =~ s{/}{::}gr if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
-  }
-  $CLASS = $options->{ -target } if exists( $options->{ -target } );
-
-  if ( exists( $options->{ -method } ) ) {
-    delete( $options->{ -method } );
-  }
-  else {
-    $METHOD = path( $testFile )->basename( $ANY_EXTENSION );
-  }
-
-  return $options;
+  return _determineTestee( $options, $testFile );
 }
 
 sub _readEnvFile {
@@ -239,7 +259,7 @@ sub _readEnvFile {
     next unless $line =~ /^ (?<name> \w+) \s* (?: = \s* (?<value> \S .*) | $ )/x;
     if ( exists( $+{ value } ) ) {
       $env{ $+{ name } } = eval( $+{ value } );
-      die( sprintf( $INVALID_ENV_ENTRY, $index, $envFile, $line, $@ ) ) if $@;
+      $DIE->( $INVALID_ENV_ENTRY, $index, $envFile, $line, $@ ) if $@;
       $NOTE->( $SET_ENV_VAR, $+{ name }, $env{ $+{ name } }, $envFile );
     }
     elsif ( exists( $ENV{ $+{ name } } ) ) {

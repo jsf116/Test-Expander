@@ -18,9 +18,11 @@ readonly_on( $VERSION );
 
 const our $ANY_EXTENSION          => qr/ \. [^.]+ $/x;
 const our $CLASS_HIERARCHY_LEVEL  => qr/^( \w+ ) (?: :: ( .+ ) )?/x;
+const our $DIE                    => sub { die( sprintf( $_[ 0 ], @_[ 1 .. $#_ ] ) ) };
 const our $ERROR_WAS              => ' Error was: ';
-const our $FALSE                  => 0;
 const our $EXCEPTION_PREFIX       => 'BEGIN failed--compilation aborted at ';
+const our $FALSE                  => 0;
+const our $INVALID_DIRECTORY      => "Invalid directory name / expression '%s' supplied along with option '-lib'%s\n";
 const our $INVALID_ENV_ENTRY      => "Erroneous line %d of '%s' containing '%s': %s\n";
 const our $INVALID_VALUE          => "Option '%s' passed along with invalid value '%s'\n";
 const our $KEEP_ENV_VAR           => "Keep environment variable '%s' containing '%s'";
