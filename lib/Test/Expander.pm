@@ -185,7 +185,7 @@ sub _exportSymbols {
   my ( $options ) = @_;
 
   foreach my $var ( sort keys( %CONSTANTS_TO_EXPORT ) ) {   # Export defined constants
-    no strict qw( refs );
+    no strict qw( refs );                                   ## no critic (ProhibitProlongedStrictureOverride)
     my $value = eval( "${ \$var }" ) or next;
     readonly_on( ${ __PACKAGE__ . '::' . $var =~ s/^.//r } );
     push( @EXPORT, $var );

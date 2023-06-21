@@ -4,21 +4,37 @@
 
 # SYNOPSIS
 
-    # Tries to automatically determine, which class and method are to be tested,
-    # does not create a temporary directory:
-    use Test::Expander;
+```perl
+# Tries to automatically determine, which class / module and method / subroutine are to be tested,
+# does not create a temporary directory:
+use Test::Expander;
 
-    # Tries to automatically determine, which class and method are to be tested,
-    # does not create a temporary directory,
-    # passes the option '-srand' to Test::V0 changing the random seed to the current time in seconds:
-    use Test::Expander -srand => time;
+# Tries to automatically determine, which class / module and method / subroutine are to be tested,
+# does not create a temporary directory, passes the option '-srand' to Test::V0 changing
+# the random seed to the current time in seconds:
+use Test::Expander -srand => time;
 
-    # Tries to automatically determine method, class is supplied explicitly,
-    # a temporary directory is created with a name corresponing to the supplied template:
-    use Test::Expander -target => 'My::Class', -tempdir => { TEMPLATE => 'my_dir.XXXXXXXX' };
+# Class is supplied explicitly, tries to automatically determine method / subroutine to be tested,
+# a temporary directory is created with a name corresponing to the template supplied:
+use Test::Expander -target => 'My::Class', -tempdir => { TEMPLATE => 'my_dir.XXXXXXXX' };
 
-    # Does not try to determine, which class and method are to be tested:
-    use Test::Expander -target => undef;
+# Does not try to determine, which class / module and method / subroutine are to be tested:
+use Test::Expander -target => undef;
+
+# Tries to automatically determine, which class / module is to be tested,
+# does not determine method / subroutine to be tested:
+use Test::Expander -method => undef;
+
+# Adds directories 'dir0' and 'dir1' located in the temporary directory created during the execution
+# at the beginning of directory list used by the Perl interpreter for search of modules to be loaded.
+# In other words, "unshifts" these directories to the @INC array:
+use Test::Expander
+    -lib => [
+    'path( $TEMP_DIR )->child( qw( dir0 ) )->stringify',
+    'path( $TEMP_DIR )->child( qw( dir1 ) )->stringify',
+    ],
+    -tempdir => {};
+```
 
 # DESCRIPTION
 
@@ -28,23 +44,50 @@ with some specific functions only available in the older module [Test::More](htt
 [Test2::V0](https://metacpan.org/pod/Test2::V0)-based ones) and handy functions from some other modules
 often used in test suites.
 
-Furthermore, this module provides a recognition of the class to be tested (see variable **$CLASS** below) so that
-in contrast to [Test2::V0](https://metacpan.org/pod/Test2::V0) you do not need to specify this explicitly
-if the path to the test file is in accordance with the name of class to be tested i.e.
-file **t/Foo/Bar/baz.t** -> class **Foo::Bar**.
+Furthermore, this module allows to automatically recognize the class / module to be tested
+(see variable **$CLASS** below) so that in contrast to [Test2::V0](https://metacpan.org/pod/Test2::V0)
+you do not need to specify this explicitly if the path to the test file is in accordance with the name
+of class / module to be tested i.e. file **t/Foo/Bar/baz.t** corresponds to class / module **Foo::Bar**.
+
+If such automated recognition is not intended, this can be deactivated by explicitly supplied
+undefined class / module name along with the option **-target**.
 
 A similar recognition is provided in regard to the method / subroutine to be tested
 (see variables **$METHOD** and **$METHOD\_REF** below) if the base name (without extension) of test file is
-identical with the name of this method / subroutine i.e. file **t/Foo/Bar/baz.t** -> method **Foo::Bar::bar**.
+identical with the name of this method / subroutine i.e. file **t/Foo/Bar/baz.t**
+corresponds to method / subroutine **Foo::Bar::bar**.
+
+You can additionally to the default functionality bundled and provided by this module apply some features from other
+convenient modules like [Test::Cmd](https://metacpan.org/pod/Test::Cmd),
+[Test::Fatal](https://metacpan.org/pod/Test::Fatal), etc.
+In this case functions with the same names as the ones defined in **Test::Expander** will NOT be re-exported.
 
 Finally, a configurable setting of specific environment variables is provided so that
 there is no need to hard-code this in the test itself.
 
-For the time being the following options are accepted by **Test::Expander**:
+The following options are accepted:
 
-- Options specific for this module only:
-    - **-target** - identical to the same-named option of [Test2::V0](https://metacpan.org/pod/Test2::V0) and
-    has the same purpose namely the explicit definition of the class to be tested as the value;
+- Options specific for this module only are always expected to have values and their meaning is:
+    - **-lib** - prepend directory list used by the Perl interpreter for search of modules to be loaded
+    (i.e. the **@INC** array) with values supplied in form of array reference.
+    Each element of this array is evaluated using [string eval](https://perldoc.perl.org/functions/eval) so that
+    expression evaluated to strings are supported.
+
+        Among other things this provides a possibility to temporary expand the module search path by directories located
+        in the temporary directory if the latter is defined with the option **-tempdir** (see below).
+
+        **-lib** is interpreted as the very last option, that's why the variabels defined by **Test::Expander** for export
+        e.g. **$TEMP\_DIR** can be used in the expressions determining such directories (see **SYNOPSYS** above).
+
+    - **-method** - prevent any attempt to automatically determine method / subroutine to be tested.
+    If the value supplied along with this option is defined and found in the class / module to be test
+    (see **-target** below), this will be considered such method / subroutine so that the variables
+    **$METHOD** and **$METHOD\_REF** (see description of exported variables below) will be imported and accessible in test.
+    If this value is **undef**, these variables are not imported.
+    - **-target** - identical to the same-named option of [Test2::V0](https://metacpan.org/pod/Test2::V0) and, if contains
+    a defined value, has the same purpose namely the explicit definition of the class / module to be tested as the value.
+    However, if its value is **undef**, this is not passed through to [Test2::V0](https://metacpan.org/pod/Test2::V0) so that
+    no class / module will be loaded and the variable **$CLASS** will not be imported at all.
     - **-tempdir** - activates creation of a temporary directory. The value has to be a hash reference with content
     as explained in [File::Temp::tempdir](https://metacpan.org/pod/File::Temp). This means, you can control the creation of
     temporary directory by passing of necessary parameters in form of a hash reference or, if the default behavior is
@@ -55,9 +98,12 @@ For the time being the following options are accepted by **Test::Expander**:
     required, simply pass the empty hash reference as the option value.
 - All other valid options (i.e. arguments starting with the dash sign **-**) are forwarded to
 [Test2::V0](https://metacpan.org/pod/Test2::V0) along with their values.
+
+    Options without values are not supported; in case of their passing an exception is raised.
+
 - If an argument cannot be recognized as an option, an exception is raised.
 
-**Test::Expander** needs to be the very first module in your test file.
+**Test::Expander** is recommended to be the very first module in your test file.
 
 The only exception currently known is the case, when some actions performed on the module level
 (e.g. determination of constants) rely upon results of other actions (e.g. mocking of built-ins).
@@ -66,32 +112,47 @@ To explain this let us assume that your test file should mock the built-in **clo
 to verify if the testee properly reacts both on its success and failure.
 For this purpose a reasonable implementation might look as follows:
 
-    my $closeSuccess = 1;
-    BEGIN {
-      *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close($_[0]) : 0 }
-    }
+```perl
+my $closeSuccess = 1;
+BEGIN {
+    *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close($_[0]) : 0 }
+}
 
-    use Test::Expander;
+use Test::Expander;
+```
 
-The automated recognition of name of class to be tested can only work if the test file is located in the corresponding
-subdirectory. For instance, if the class to be tested is _Foo::Bar::Baz_, then the folder with test files
-related to this class should be **t/**_Foo_**/**_Bar_**/**_Baz_ or **xt/**_Foo_**/**_Bar_**/**_Baz_
+The automated recognition of name of class / module to be tested can only work
+if the test file is located in the corresponding subdirectory.
+For instance, if the class / module to be tested is _Foo::Bar::Baz_, then the folder with test files
+related to this class / module should be **t/**_Foo_**/**_Bar_**/**_Baz_ or **xt/**_Foo_**/**_Bar_**/**_Baz_
 (the name of the top-level directory in this relative name - **t**, or **xt**, or **my\_test** is not important) -
 otherwise the module name cannot be put into the exported variable **$CLASS** and, if you want to use this variable,
 should be supplied as the value of **-target**:
 
-    use Test::Expander -target => 'Foo::Bar::Baz';
+```perl
+use Test::Expander -target => 'Foo::Bar::Baz';
+```
+
+This recognition can explicitly be deactivated if the value of **-target** is **undef**, so that no class / module
+will be loaded and, correspondingly, the variables **$CLASS**, **$METHOD**, and **$METHOD\_REF** will not be exported.
 
 Furthermore, the automated recognition of the name of the method / subroutine to be tested only works if the file
-containing the class mentioned above exists and if this class has the method / subroutine with the same name as the test
-file base name without the extension.
+containing the class / module mentioned above exists and if this class / module has the method / subroutine
+with the same name as the test file base name without the extension.
 If this is the case, the exported variables **$METHOD** and **$METHOD\_REF** contain the name of method / subroutine
-to be tested and its reference, correspondingly, otherwise both variables are undefined.
+to be tested and its reference, correspondingly, otherwise both variables are neither evaluated nor exported.
+
+Also in this case evaluation and export of the variables **$METHOD** and **$METHOD\_REF** can be prevented
+by passing of **undef** as value of the option **-method**:
+
+```perl
+use Test::Expander -target => undef;
+```
 
 Finally, **Test::Expander** supports testing inside of a clean environment containing only some clearly
 specified environment variables required for the particular test.
 Names and values of these environment variables should be configured in files,
-the names of which are identical with paths to single class levels or the method to be tested,
+the names of which are identical with paths to single class / module levels or the method / subroutine to be tested,
 and the extension is always **.env**.
 For instance, if the test file name is **t/Foo/Bar/Baz/myMethod.t**, the following approach is applied:
 
@@ -146,43 +207,53 @@ directory / file are created after **use Test::Expander** and that their names a
 **$TEMP\_DIR** / **$TEMP\_FILE**, correspondingly.
 Both temporary directory and file are removed by default after execution.
 
-All functions provided by this module are exported by default. These and the exported variables are:
+The following functions provided by this module are exported by default:
 
 - all functions exported by default from [Test2::V0](https://metacpan.org/pod/Test2::V0),
-- all functions exported by default from [Test::Files](https://metacpan.org/pod/Test::Files),
-- all functions exported by default from [Test::Output](https://metacpan.org/pod/Test::Output),
-- all functions exported by default from [Test::Warn](https://metacpan.org/pod/Test::Warn),
+- all functions exported by default from [Test2::Tools::Explain](https://metacpan.org/pod/Test2::Tools::Explain),
 - some functions exported by default from [Test::More](https://metacpan.org/pod/Test::More)
 and often used in older tests but not supported by [Test2::V0](https://metacpan.org/pod/Test2::V0):
     - BAIL\_OUT,
     - is\_deeply,
     - new\_ok,
     - require\_ok,
-    - use\_ok,
+    - use\_ok.
 - some functions exported by default from [Test::Exception](https://metacpan.org/pod/Test::Exception)
 and often used in older tests but not supported by [Test2::V0](https://metacpan.org/pod/Test2::V0):
+
     - dies\_ok,
     - lives\_ok,
-    - throws\_ok,
-- function exported by default from [Test2::Tools::Explain](https://metacpan.org/pod/Test2::Tools::Explain):
-    - explain,
+    - throws\_ok.
+
+    some functions exported by default from [Test2::Tools::Explain](https://metacpan.org/pod/Test2::Tools::Explain)
+    and often used in older tests but not supported by
+    [Test2::Tools::Explain](https://metacpan.org/pod/Test2::Tools::Explain):
+
+    - explain.
+
 - function exported by default from [Const::Fast](https://metacpan.org/pod/Const::Fast):
-    - const,
+    - const.
 - some functions exported by request from [File::Temp](https://metacpan.org/pod/File::Temp):
     - tempdir,
     - tempfile,
 - some functions exported by request from [Path::Tiny](https://metacpan.org/pod/Path::Tiny):
     - cwd,
     - path,
-- variable **$CLASS** containing the name of the class to be tested,
-- variable **$METHOD** containing the name of the method to be tested,
-- variable **$METHOD\_REF** containing the reference to the subroutine to be tested.
-- variable **$TEMP\_DIR** containing the name of a temporary directory created at compile time
-if the option **-tempdir** was supplied.
-- variable **$TEMP\_FILE** containing the name of a temporary file created at compile time
-if the option **-tempfile** was supplied.
 
-All variables mentioned above are read-only if they are defined after **use Test::Expander ...**.
+The following variables can be set and exported:
+
+- variable **$CLASS** containing the name of the class / module to be tested
+if the class / module recognition is not disable and possible,
+- variable **$METHOD** containing the name of the method / subroutine to be tested
+if the method / subroutine recognition is not disable and possible,
+- variable **$METHOD\_REF** containing the reference to the subroutine to be tested
+if the method / subroutine recognition is not disable and possible,
+- variable **$TEMP\_DIR** containing the name of a temporary directory created at compile time
+if the option **-tempdir** is supplied,
+- variable **$TEMP\_FILE** containing the name of a temporary file created at compile time
+if the option **-tempfile** is supplied.
+
+All variables mentioned above are read-only after their export.
 In this case they are logged to STDOUT using [note](https://metacpan.org/pod/Test2::Tools::Basic#DIAGNOSTICS).
 
 # AUTHOR
@@ -196,7 +267,7 @@ Please report any bugs or feature requests through the web interface at
 
 # COPYRIGHT AND LICENSE
 
-Copyright (c) 2021-2022 Jurij Fajnberg
+Copyright (c) 2021-2023 Jurij Fajnberg
 
 This program is free software; you can redistribute it and/or modify it under the same terms
 as the Perl 5 programming language system itself.

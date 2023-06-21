@@ -26,6 +26,16 @@ B<Test::Expander> - Expansion of test functionalities that appear to be frequent
   # does not determine method / subroutine to be tested:
   use Test::Expander -method => undef;
 
+  # Adds directories 'dir0' and 'dir1' located in the temporary directory created during the execution
+  # at the beginning of directory list used by the Perl interpreter for search of modules to be loaded.
+  # In other words, "unshifts" these directories to the @INC array:
+  use Test::Expander
+    -lib => [
+      'path( $TEMP_DIR )->child( qw( dir0 ) )->stringify',
+      'path( $TEMP_DIR )->child( qw( dir1 ) )->stringify',
+    ],
+    -tempdir => {};
+
 =head1 DESCRIPTION
 
 B<Test::Expander> combines all advanced possibilities provided by L<Test2::V0|https://metacpan.org/pod/Test2::V0>
@@ -64,6 +74,19 @@ The following options are accepted:
 Options specific for this module only are always expected to have values and their meaning is:
 
 =over 2
+
+=item
+
+B<-lib> - prepend directory list used by the Perl interpreter for search of modules to be loaded
+(i.e. the B<@INC> array) with values supplied in form of array reference.
+Each element of this array is evaluated using L<string eval|https://perldoc.perl.org/functions/eval> so that
+expression evaluated to strings are supported.
+
+Among other things this provides a possibility to temporary expand the module search path by directories located
+in the temporary directory if the latter is defined with the option B<-tempdir> (see below).
+
+B<-lib> is interpreted as the very last option, that's why the variabels defined by B<Test::Expander> for export
+e.g. B<$TEMP_DIR> can be used in the expressions determining such directories (see B<SYNOPSYS> above).
 
 =item
 

@@ -1,5 +1,12 @@
 Changelog for Test-Expander
 
+2.0.1 2023-06-21 19:42:51 UTC
+    - If any of the variables $CLASS, $METHOD, $METHOD_REF, $TEMP_DIR, and $TEMP_FILE is undefined, it is not exported.
+    - Modules Test::Files, Test::Output, and Test::Warn are no longer loaded and their functions are not exported by Test::Expander.
+    - Unexpedted exceptions detected by "lives_ok" are logged to the screen using "diag".
+    - Options "-lib" and "-method" introduced.
+    - Option "-target" supports "undef" as value if no testee module should be loaded automatically.
+
 1.1.1 2022-04-10 21:14:31 UTC
     - "no warnings qw(redundant)" replaced with "no warnings" because the category "redundant" is not supported by older Perl versions.
 
