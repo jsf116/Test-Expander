@@ -9,7 +9,7 @@ use File::chdir;
 
 use Test::Expander -tempdir => {}, -srand => time;
 
-$METHOD     //= '_setEnv';
+$METHOD     //= '_set_env';
 $METHOD_REF //= $CLASS->can( $METHOD );
 can_ok( $CLASS, $METHOD );
 

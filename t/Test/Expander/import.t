@@ -27,7 +27,9 @@ use Test::Builder::Tester     tests => @functions + @variables + 12;
 use Test::Expander            -target   => 'Test::Expander',
                               -tempdir  => { CLEANUP => 1 },
                               -tempfile => { UNLINK  => 1 };
-use Test::Expander::Constants qw( $INVALID_DIRECTORY $INVALID_VALUE $SET_TO $REQUIRE_DESCRIPTION $UNKNOWN_OPTION );
+use Test::Expander::Constants qw(
+  $FMT_INVALID_DIRECTORY $FMT_INVALID_VALUE $FMT_SET_TO $FMT_REQUIRE_DESCRIPTION $FMT_UNKNOWN_OPTION
+);
 
 foreach my $function ( sort @functions ) {
   my $title = "$CLASS->can('$function')";
@@ -46,7 +48,7 @@ foreach my $variable ( sort @variables ) {
 my ( $title, $expected );
 
 $title    = "invalid value type of '-lib'";
-$expected = $INVALID_VALUE =~ s/%s/.+/gr;
+$expected = $FMT_INVALID_VALUE =~ s/%s/.+/gr;
 readonly_off( $CLASS );
 readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
@@ -57,7 +59,7 @@ like( dies { $CLASS->$METHOD( -lib => {} ) }, qr/$expected/, $title );
 test_test( $title );
 
 $title    = "invalid directory type within '-lib'";
-$expected = $INVALID_DIRECTORY =~ s/%s/.+/gr;
+$expected = $FMT_INVALID_DIRECTORY =~ s/%s/.+/gr;
 readonly_off( $CLASS );
 readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
@@ -68,7 +70,7 @@ like( dies { $CLASS->$METHOD( -lib => [ {} ] ) }, qr/$expected/, $title );
 test_test( $title );
 
 $title    = "invalid directory value within '-lib'";
-$expected = $INVALID_DIRECTORY =~ s/%s/.+/gr;
+$expected = $FMT_INVALID_DIRECTORY =~ s/%s/.+/gr;
 readonly_off( $CLASS );
 readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
@@ -89,19 +91,19 @@ readonly_off( $TEMP_FILE );
 test_out( "ok 1 - $title" );
 {
   my $mockImporter = mock 'Importer'  => ( override => [ import_into    => sub {} ] );
-  my $mockSelf     = mock $CLASS      => ( override => [ _exportSymbols => sub {} ] );
+  my $mockSelf     = mock $CLASS      => ( override => [ _export_symbols => sub {} ] );
   my $mockTest2    = mock 'Test2::V0' => ( override => [ import         => sub {} ] );
   is( $CLASS->$METHOD( -lib => [ 'path( $TEMP_DIR )->child( qw( my_root ) )->stringify' ] ), undef, $title );
 }
 test_test( $title );
 
-$title = sprintf( $REQUIRE_DESCRIPTION, 'foo', '' );
+$title = sprintf( $FMT_REQUIRE_DESCRIPTION, 'foo', '' );
 test_out( "ok 1 - $title" );
 require_ok( 'foo', $title );
 test_test( $title );
 
 $title    = "invalid value of '-method'";
-$expected = $INVALID_VALUE =~ s/%s/.+/gr;
+$expected = $FMT_INVALID_VALUE =~ s/%s/.+/gr;
 readonly_off( $CLASS );
 readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
@@ -112,7 +114,7 @@ like( dies { $CLASS->$METHOD( -method => {} ) }, qr/$expected/, $title );
 test_test( $title );
 
 $title    = "invalid value of '-tempdir'";
-$expected = $INVALID_VALUE =~ s/%s/.+/gr;
+$expected = $FMT_INVALID_VALUE =~ s/%s/.+/gr;
 readonly_off( $CLASS );
 readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
@@ -123,7 +125,7 @@ like( dies { $CLASS->$METHOD( -tempdir => 1 ) }, qr/$expected/, $title );
 test_test( $title );
 
 $title    = "invalid value of '-tempfile'";
-$expected = $INVALID_VALUE =~ s/%s/.+/gr;
+$expected = $FMT_INVALID_VALUE =~ s/%s/.+/gr;
 readonly_off( $CLASS );
 readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
@@ -134,7 +136,7 @@ like( dies { $CLASS->$METHOD( -tempfile => 1 ) }, qr/$expected/, $title );
 test_test( $title );
 
 $title    = 'unknown option with some value';
-$expected = $UNKNOWN_OPTION =~ s/%s/.+/gr;
+$expected = $FMT_UNKNOWN_OPTION =~ s/%s/.+/gr;
 readonly_off( $CLASS );
 readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
@@ -145,7 +147,7 @@ like( dies { $CLASS->$METHOD( unknown => 1 ) }, qr/$expected/, $title );
 test_test( $title );
 
 $title    = 'unknown option without value';
-$expected = $UNKNOWN_OPTION =~ s/%s/.+/r =~ s/%s//r;
+$expected = $FMT_UNKNOWN_OPTION =~ s/%s/.+/r =~ s/%s//r;
 readonly_off( $CLASS );
 readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
@@ -165,9 +167,9 @@ readonly_off( $TEMP_FILE );
 test_out(
   join(
     "\n",
-    sprintf( "# $SET_TO", '$CLASS',     $CLASS ),
-    sprintf( "# $SET_TO", '$TEMP_DIR',  $TEMP_DIR ),
-    sprintf( "# $SET_TO", '$TEMP_FILE', $TEMP_FILE ),
+    sprintf( "# $FMT_SET_TO", '$CLASS',     $CLASS ),
+    sprintf( "# $FMT_SET_TO", '$TEMP_DIR',  $TEMP_DIR ),
+    sprintf( "# $FMT_SET_TO", '$TEMP_FILE', $TEMP_FILE ),
     "ok 1 - $title",
   )
 );

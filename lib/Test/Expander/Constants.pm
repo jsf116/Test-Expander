@@ -16,33 +16,41 @@ use Test2::Tools::Basic;
 
 readonly_on( $VERSION );
 
-const our $ANY_EXTENSION          => qr/ \. [^.]+ $/x;
-const our $CLASS_HIERARCHY_LEVEL  => qr/^( \w+ ) (?: :: ( .+ ) )?/x;
-const our $DIE                    => sub { die( sprintf( $_[ 0 ], @_[ 1 .. $#_ ] ) ) };
-const our $ERROR_WAS              => ' Error was: ';
-const our $EXCEPTION_PREFIX       => 'BEGIN failed--compilation aborted at ';
-const our $FALSE                  => 0;
-const our $INVALID_DIRECTORY      => "Invalid directory name / expression '%s' supplied along with option '-lib'%s\n";
-const our $INVALID_ENV_ENTRY      => "Erroneous line %d of '%s' containing '%s': %s\n";
-const our $INVALID_VALUE          => "Option '%s' passed along with invalid value '%s'\n";
-const our $KEEP_ENV_VAR           => "Keep environment variable '%s' containing '%s'";
-const our $NEW_FAILED             => '%s->new died.%s';
-const our $NEW_SUCCEEDED          => "An object of class '%s' isa '%s'";
-const our $NOTE                   => sub { my ( $format, @args ) = @_; note( sprintf( $format, @args ) ) };
-const our $REPLACEMENT            => $EXCEPTION_PREFIX . '%s line %s.';
-const our $REQUIRE_DESCRIPTION    => 'require %s;%s';
-const our $REQUIRE_IMPLEMENTATION => 'package %s; require %s';
-const our $SEARCH_PATTERN         => $EXCEPTION_PREFIX . '.*$';
-const our $SET_ENV_VAR            => "Set environment variable '%s' to '%s' from file '%s'";
-const our $SET_TO                 => "Set %s to '%s'";
-const our $TOP_DIR_IN_PATH        => qr{^ ( [^/]+ ) }x;
-const our $TRUE                   => 1;
-const our $UNEXPECTED_EXCEPTION   => 'Unexpectedly caught exception: ';
-const our $UNKNOWN_OPTION         => "Unknown option '%s' => '%s' supplied.\n";
-const our $USE_DESCRIPTION        => 'use %s;%s';
-const our $USE_IMPLEMENTATION     => 'package %s; use %s%s; 1';
-const our $VERSION_NUMBER         => qr/^ \d+ (?: \. \d+ )* $/x;
-const our %CONSTANTS_TO_EXPORT    => (
+const our $DIE                         => sub { die( sprintf( $_[ 0 ], @_[ 1 .. $#_ ] ) ) };
+
+const our $EXCEPTION_PREFIX            => 'BEGIN failed--compilation aborted at ';
+
+const our $FALSE                       => 0;
+
+const our $FMT_INVALID_DIRECTORY       => "Invalid directory name / expression '%s' supplied with option '-lib'%s\n";
+const our $FMT_INVALID_ENV_ENTRY       => "Erroneous line %d of '%s' containing '%s': %s\n";
+const our $FMT_INVALID_VALUE           => "Option '%s' passed along with invalid value '%s'\n";
+const our $FMT_KEEP_ENV_VAR            => "Keep environment variable '%s' containing '%s'";
+const our $FMT_NEW_FAILED              => '%s->new died.%s';
+const our $FMT_NEW_SUCCEEDED           => "An object of class '%s' isa '%s'";
+const our $FMT_REPLACEMENT             => $EXCEPTION_PREFIX . '%s line %s.';
+const our $FMT_REQUIRE_DESCRIPTION     => 'require %s;%s';
+const our $FMT_REQUIRE_IMPLEMENTATION  => 'package %s; require %s';
+const our $FMT_SEARCH_PATTERN          => $EXCEPTION_PREFIX . '.*$';
+const our $FMT_SET_ENV_VAR             => "Set environment variable '%s' to '%s' from file '%s'";
+const our $FMT_SET_TO                  => "Set %s to '%s'";
+const our $FMT_UNKNOWN_OPTION          => "Unknown option '%s' => '%s' supplied.\n";
+const our $FMT_USE_DESCRIPTION         => 'use %s;%s';
+const our $FMT_USE_IMPLEMENTATION      => 'package %s; use %s%s; 1';
+
+const our $MSG_ERROR_WAS               => ' Error was: ';
+const our $MSG_UNEXPECTED_EXCEPTION    => 'Unexpectedly caught exception: ';
+
+const our $NOTE                        => sub { my ( $format, @args ) = @_; note( sprintf( $format, @args ) ) };
+
+const our $REGEX_ANY_EXTENSION         => qr/ \. [^.]+ $/x;
+const our $REGEX_CLASS_HIERARCHY_LEVEL => qr/^( \w+ ) (?: :: ( .+ ) )?/x;
+const our $REGEX_TOP_DIR_IN_PATH       => qr{^ ( [^/]+ ) }x;
+const our $REGEX_VERSION_NUMBER        => qr/^ \d+ (?: \. \d+ )* $/x;
+
+const our $TRUE                        => 1;
+
+const our %CONSTANTS_TO_EXPORT         => (
   '$CLASS'      => sub { $_[ 0 ] },
   '$METHOD'     => sub { $_[ 0 ] },
   '$METHOD_REF' => sub { '\&' . $_[ 1 ] . '::' . svref_2object( $_[ 0 ] )->GV->NAME },

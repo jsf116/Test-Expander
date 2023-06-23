@@ -5,11 +5,11 @@ use warnings
   FATAL    => qw( all ),
   NONFATAL => qw( deprecated exec internal malloc newline once portable redefine recursion uninitialized );
 
-use Test::Expander::Constants qw( $ERROR_WAS );
+use Test::Expander::Constants qw( $MSG_ERROR_WAS );
 use constant TEST_CASES => {
   'no exception'                              => { exception => '',    args => [],            output => '' },
-  'exception raised, no replacement required' => { exception => 'ABC', args => [],            output => "${ ERROR_WAS }ABC" },
-  'exception raised, replacement required'    => { exception => 'ABC', args => [ qw( B b ) ], output => "${ ERROR_WAS }AbC" },
+  'exception raised, no replacement required' => { exception => 'ABC', args => [],            output => $MSG_ERROR_WAS . 'ABC' },
+  'exception raised, replacement required'    => { exception => 'ABC', args => [ qw( B b ) ], output => $MSG_ERROR_WAS . 'AbC' },
 };
 use Test::Builder::Tester tests => scalar( keys( %{ TEST_CASES() } ) );
 

@@ -16,6 +16,6 @@ use Test::Expander;
 
 foreach my $title ( keys( %{ TEST_CASES() } ) ) {
   test_out( "ok 1 - $title" );
-  is( Test::Expander::_useImports( TEST_CASES->{ $title }->{ input } ), TEST_CASES->{ $title }->{ output }, $title );
+  is( Test::Expander::_use_imports( TEST_CASES->{ $title }->{ input } ), TEST_CASES->{ $title }->{ output }, $title );
   test_test( $title );
 }

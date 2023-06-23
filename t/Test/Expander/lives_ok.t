@@ -6,7 +6,7 @@ use warnings
 use Test::Builder::Tester tests => 2;
 
 use Test::Expander;
-use Test::Expander::Constants qw( $UNEXPECTED_EXCEPTION );
+use Test::Expander::Constants qw( $MSG_UNEXPECTED_EXCEPTION );
 
 my $title = 'execution succeeds';
 test_out( "ok 1 - $title" );
@@ -18,7 +18,7 @@ test_out( "ok 1 - $title" );
 my $error = 'DIE TEST';
 my $mockSelf = mock $CLASS => (
   override => [
-    diag => sub { is( $_[ 0 ], $UNEXPECTED_EXCEPTION . $error . "\n", $title ) },
+    diag => sub { is( $_[ 0 ], $MSG_UNEXPECTED_EXCEPTION . $error . "\n", $title ) },
     ok   => sub ($;$@) { 1 },
   ],
 );
