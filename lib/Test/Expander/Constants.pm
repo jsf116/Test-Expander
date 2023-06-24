@@ -56,6 +56,7 @@ const our %CONSTANTS_TO_EXPORT         => (
   '$METHOD_REF' => sub { '\&' . $_[ 1 ] . '::' . svref_2object( $_[ 0 ] )->GV->NAME },
   '$TEMP_DIR'   => sub { $_[ 0 ] },
   '$TEMP_FILE'  => sub { $_[ 0 ] },
+  '$TEST_FILE'  => sub { $_[ 0 ] },
 );
 
 push( our @EXPORT_OK, keys( %{ peek_our( 0 ) } ) );

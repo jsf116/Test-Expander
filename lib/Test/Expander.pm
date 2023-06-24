@@ -36,7 +36,7 @@ use Test::Expander::Constants qw(
 
 readonly_on( $VERSION );
 
-our ( $CLASS, $METHOD, $METHOD_REF, $TEMP_DIR, $TEMP_FILE );
+our ( $CLASS, $METHOD, $METHOD_REF, $TEMP_DIR, $TEMP_FILE, $TEST_FILE );
 our @EXPORT = (
   @{ Const::Fast::EXPORT },
   @{ Test2::Tools::Explain::EXPORT },
@@ -59,16 +59,16 @@ sub dies_ok ( &;$ ) {
 sub import {
   my ( $class, @exports ) = @_;
 
-  my $frameIndex = 0;
-  my $testFile;
-  while( my @currentFrame = caller( $frameIndex++ ) ) {
-    $testFile = path( $currentFrame[ 1 ] ) =~ s{^/}{}r;
+  my $frame_index = 0;
+  my $test_file;
+  while( my @current_frame = caller( $frame_index++ ) ) {
+    $test_file = path( $current_frame[ 1 ] ) =~ s{^/}{}r;
   }
-  my $options = _parse_options( \@exports, $testFile );
+  my $options = _parse_options( \@exports, $test_file );
 
-  _set_env( $options->{ -target }, $testFile );
+  _set_env( $options->{ -target }, $test_file );
 
-  _export_symbols( $options );
+  _export_symbols( $options, $test_file );
   Test2::V0->import( %$options );
 
   Importer->import_into( $class, scalar( caller ), () );
@@ -104,22 +104,22 @@ sub new_ok {
 sub require_ok {
   my ( $module ) = @_;
 
-  my $package       = caller;
-  my $requireResult = eval( sprintf( $FMT_REQUIRE_IMPLEMENTATION, $package, $module ) );
-  ok( $requireResult, sprintf( $FMT_REQUIRE_DESCRIPTION, $module, _error() ) );
+  my $package        = caller;
+  my $require_result = eval( sprintf( $FMT_REQUIRE_IMPLEMENTATION, $package, $module ) );
+  ok( $require_result, sprintf( $FMT_REQUIRE_DESCRIPTION, $module, _error() ) );
 
-  return $requireResult;
+  return $require_result;
 }
 
 sub throws_ok ( &$;$ ) {
   my ( $coderef, $expecting, $description ) = @_;
 
   eval { $coderef->() };
-  my $exception    = $@;
-  my $expectedType = ref( $expecting );
+  my $exception     = $@;
+  my $expected_type = ref( $expecting );
 
-  return $expectedType eq 'Regexp' ? like  ( $exception,   $expecting,   $description )
-                                   : isa_ok( $exception, [ $expecting ], $description );
+  return $expected_type eq 'Regexp' ? like  ( $exception,   $expecting,   $description )
+                                    : isa_ok( $exception, [ $expecting ], $description );
 }
 
 sub use_ok ( $;@ ) {
@@ -128,26 +128,26 @@ sub use_ok ( $;@ ) {
   my ( $package, $filename, $line ) = caller( 0 );
   $filename =~ y/\n\r/_/;                                   # taken over from Test::More
 
-  my $requireResult = eval( sprintf( $FMT_USE_IMPLEMENTATION, $package, $module, _use_imports( \@imports ) ) );
+  my $require_result = eval( sprintf( $FMT_USE_IMPLEMENTATION, $package, $module, _use_imports( \@imports ) ) );
   ok(
-    $requireResult,
+    $require_result,
     sprintf(
       $FMT_USE_DESCRIPTION, $module, _error( $FMT_SEARCH_PATTERN, sprintf( $FMT_REPLACEMENT, $filename, $line ) )
     )
   );
 
-  return $requireResult;
+  return $require_result;
 }
 
 sub _determine_testee {
-  my ( $options, $testFile ) = @_;
+  my ( $options, $test_file ) = @_;
 
   if ( $options->{ -lib } ) {
     foreach my $directory ( @{ $options->{ -lib } } ) {
       $DIE->( $FMT_INVALID_DIRECTORY, $directory, 'invalid type' ) if ref( $directory );
-      my $incEntry = eval( $directory );
+      my $inc_entry = eval( $directory );
       $DIE->( $FMT_INVALID_DIRECTORY, $directory, $@ ) if $@;
-      unshift( @INC, $incEntry );
+      unshift( @INC, $inc_entry );
     }
     delete( $options->{ -lib } );
   }
@@ -156,12 +156,12 @@ sub _determine_testee {
     delete( $options->{ -method } );
   }
   else {
-    $METHOD = path( $testFile )->basename( $REGEX_ANY_EXTENSION );
+    $METHOD = path( $test_file )->basename( $REGEX_ANY_EXTENSION );
   }
 
   unless ( exists( $options->{ -target } ) ) {              # Try to determine class / module autmatically
-    my ( $testRoot ) = $testFile =~ $REGEX_TOP_DIR_IN_PATH;
-    my $testee       = path( $testFile )->relative( $testRoot )->parent;
+    my ( $test_root ) = $test_file =~ $REGEX_TOP_DIR_IN_PATH;
+    my $testee        = path( $test_file )->relative( $test_root )->parent;
     $options->{ -target } = $testee =~ s{/}{::}gr if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
   }
   $CLASS = $options->{ -target } if exists( $options->{ -target } );
@@ -170,18 +170,19 @@ sub _determine_testee {
 }
 
 sub _error {
-  my ( $searchString, $replacementString ) = @_;
+  my ( $search_string, $replacement_string ) = @_;
 
   return '' if $@ eq '';
 
   my $error = $MSG_ERROR_WAS . $@ =~ s/\n$//mr;
-  $error =~ s/$searchString/$replacementString/m if defined( $searchString );
+  $error =~ s/$search_string/$replacement_string/m if defined( $search_string );
   return $error;
 }
 
 sub _export_symbols {
-  my ( $options ) = @_;
+  my ( $options, $test_file ) = @_;
 
+  $TEST_FILE = path( $test_file )->absolute->stringify;
   foreach my $var ( sort keys( %CONSTANTS_TO_EXPORT ) ) {   # Export defined constants
     no strict qw( refs );                                   ## no critic (ProhibitProlongedStrictureOverride)
     my $value = eval( "${ \$var }" ) or next;
@@ -205,60 +206,60 @@ sub _new_test_message {
 }
 
 sub _parse_options {
-  my ( $exports, $testFile ) = @_;
+  my ( $exports, $test_file ) = @_;
 
   my $options = {};
-  while ( my $optionName = shift( @$exports ) ) {
-    given ( $optionName ) {
+  while ( my $option_name = shift( @$exports ) ) {
+    given ( $option_name ) {
       when ( '-lib' ) {
-        my $optionValue = shift( @$exports );
-        $DIE->( $FMT_INVALID_VALUE, $optionName, $optionValue ) if ref( $optionValue ) ne 'ARRAY';
-        $options->{ -lib } = $optionValue;
+        my $option_value = shift( @$exports );
+        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'ARRAY';
+        $options->{ -lib } = $option_value;
       }
       when ( '-method' ) {
-        my $optionValue = shift( @$exports );
-        $DIE-> ( $FMT_INVALID_VALUE, $optionName, $optionValue ) if ref( $optionValue );
-        $METHOD = $options->{ -method } = $optionValue;
+        my $option_value = shift( @$exports );
+        $DIE-> ( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value );
+        $METHOD = $options->{ -method } = $option_value;
       }
       when ( '-target' ) {
-        my $optionValue = shift( @$exports );               # Do not load module only if its name is undef
-        $options->{ -target } = $optionValue if defined( $optionValue );
+        my $option_value = shift( @$exports );              # Do not load module only if its name is undef
+        $options->{ -target } = $option_value if defined( $option_value );
       }
       when ( '-tempdir' ) {
-        my $optionValue = shift( @$exports );
-        $DIE->( $FMT_INVALID_VALUE, $optionName, $optionValue ) if ref( $optionValue ) ne 'HASH';
-        $TEMP_DIR = tempdir( CLEANUP => 1, %$optionValue );
+        my $option_value = shift( @$exports );
+        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+        $TEMP_DIR = tempdir( CLEANUP => 1, %$option_value );
       }
       when ( '-tempfile' ) {
-        my $optionValue = shift( @$exports );
-        $DIE->( $FMT_INVALID_VALUE, $optionName, $optionValue ) if ref( $optionValue ) ne 'HASH';
-        my $fileHandle;
-        ( $fileHandle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$optionValue );
+        my $option_value = shift( @$exports );
+        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+        my $file_handle;
+        ( $file_handle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$option_value );
       }
       when ( /^-\w/ ) {
-        $options->{ $optionName } = shift( @$exports );
+        $options->{ $option_name } = shift( @$exports );
       }
       default {
-        $DIE->( $FMT_UNKNOWN_OPTION, $optionName, shift( @$exports ) // '' );
+        $DIE->( $FMT_UNKNOWN_OPTION, $option_name, shift( @$exports ) // '' );
       }
     }
   }
 
-  return _determine_testee( $options, $testFile );
+  return _determine_testee( $options, $test_file );
 }
 
 sub _read_env_file {
-  my ( $envFile ) = @_;
+  my ( $env_file ) = @_;
 
-  my @lines = path( $envFile )->lines( { chomp => 1 } );
+  my @lines = path( $env_file )->lines( { chomp => 1 } );
   my %env;
   while ( my ( $index, $line ) = each( @lines ) ) {
                                                             ## no critic (ProhibitUnusedCapture)
     next unless $line =~ /^ (?<name> \w+) \s* (?: = \s* (?<value> \S .*) | $ )/x;
     if ( exists( $+{ value } ) ) {
       $env{ $+{ name } } = eval( $+{ value } );
-      $DIE->( $FMT_INVALID_ENV_ENTRY, $index, $envFile, $line, $@ ) if $@;
-      $NOTE->( $FMT_SET_ENV_VAR, $+{ name }, $env{ $+{ name } }, $envFile );
+      $DIE->( $FMT_INVALID_ENV_ENTRY, $index, $env_file, $line, $@ ) if $@;
+      $NOTE->( $FMT_SET_ENV_VAR, $+{ name }, $env{ $+{ name } }, $env_file );
     }
     elsif ( exists( $ENV{ $+{ name } } ) ) {
       $env{ $+{ name } } = $ENV{ $+{ name } };
@@ -270,46 +271,46 @@ sub _read_env_file {
 }
 
 sub _set_env {
-  my ( $class, $testFile ) = @_;
+  my ( $class, $test_file ) = @_;
 
-  my $envFound = $FALSE;
-  my $newEnv   = {};
+  my $env_found = $FALSE;
+  my $new_env   = {};
   {
-    local $CWD = $testFile =~ s{/.*}{}r;                    ## no critic (ProhibitLocalVars)
-    ( $envFound, $newEnv ) = _set_env_hierarchically( $class, $envFound, $newEnv );
+    local $CWD = $test_file =~ s{/.*}{}r;                   ## no critic (ProhibitLocalVars)
+    ( $env_found, $new_env ) = _set_env_hierarchically( $class, $env_found, $new_env );
   }
 
-  my $envFile = $testFile =~ s/$REGEX_ANY_EXTENSION/.env/r;
+  my $env_file = $test_file =~ s/$REGEX_ANY_EXTENSION/.env/r;
 
-  if ( path( $envFile )->is_file ) {
-    $envFound                       = $TRUE unless $envFound;
-    my $methodEnv                   = _read_env_file( $envFile );
-    @$newEnv{ keys( %$methodEnv ) } = values( %$methodEnv );
+  if ( path( $env_file )->is_file ) {
+    $env_found                        = $TRUE unless $env_found;
+    my $method_env                    = _read_env_file( $env_file );
+    @$new_env{ keys( %$method_env ) } = values( %$method_env );
   }
 
-  %ENV = %$newEnv if $envFound;
+  %ENV = %$new_env if $env_found;
 
   return;
 }
 
 sub _set_env_hierarchically {
-  my ( $class, $envFound, $newEnv ) = @_;
+  my ( $class, $env_found, $new_env ) = @_;
 
-  return ( $envFound, $newEnv ) unless $class;
+  return ( $env_found, $new_env ) unless $class;
 
-  my $classTopLevel;
-  ( $classTopLevel, $class ) = $class =~ $REGEX_CLASS_HIERARCHY_LEVEL;
+  my $class_top_level;
+  ( $class_top_level, $class ) = $class =~ $REGEX_CLASS_HIERARCHY_LEVEL;
 
-  return ( $FALSE, {} ) unless path( $classTopLevel )->is_dir;
+  return ( $FALSE, {} ) unless path( $class_top_level )->is_dir;
 
-  my $envFile = $classTopLevel . '.env';
-  if ( path( $envFile )->is_file ) {
-    $envFound = $TRUE unless $envFound;
-    $newEnv   = { %$newEnv, %{ _read_env_file( $envFile ) } };
+  my $env_file = $class_top_level . '.env';
+  if ( path( $env_file )->is_file ) {
+    $env_found = $TRUE unless $env_found;
+    $new_env   = { %$new_env, %{ _read_env_file( $env_file ) } };
   }
 
-  local $CWD = $classTopLevel;                              ## no critic (ProhibitLocalVars)
-  return _set_env_hierarchically( $class, $envFound, $newEnv );
+  local $CWD = $class_top_level;                            ## no critic (ProhibitLocalVars)
+  return _set_env_hierarchically( $class, $env_found, $new_env );
 }
 
 sub _use_imports {

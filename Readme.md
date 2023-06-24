@@ -3,40 +3,83 @@
 **Test::Expander** - Expansion of test functionalities that appear to be frequently used while testing.
 
 # SYNOPSIS
-
 ```perl
-# Tries to automatically determine, which class / module and method / subroutine are to be tested,
-# does not create a temporary directory:
-use Test::Expander;
+    # Tries to automatically determine, which class / module and method / subroutine are to be tested,
+    # does not create a temporary directory:
+    use Test::Expander;
 
-# Tries to automatically determine, which class / module and method / subroutine are to be tested,
-# does not create a temporary directory, passes the option '-srand' to Test::V0 changing
-# the random seed to the current time in seconds:
-use Test::Expander -srand => time;
+    # Tries to automatically determine, which class / module and method / subroutine are to be tested,
+    # does not create a temporary directory, passes the option '-srand' to Test2::V0 changing
+    # the random seed to the current time in seconds:
+    use Test::Expander -srand => time;
 
-# Class is supplied explicitly, tries to automatically determine method / subroutine to be tested,
-# a temporary directory is created with a name corresponing to the template supplied:
-use Test::Expander -target => 'My::Class', -tempdir => { TEMPLATE => 'my_dir.XXXXXXXX' };
+    # Class is supplied explicitly, tries to automatically determine method / subroutine to be tested,
+    # a temporary directory is created with a name corresponing to the template supplied:
+    use Test::Expander -target => 'My::Class', -tempdir => { TEMPLATE => 'my_dir.XXXXXXXX' };
 
-# Does not try to determine, which class / module and method / subroutine are to be tested:
-use Test::Expander -target => undef;
+    # Does not try to determine, which class / module and method / subroutine are to be tested:
+    use Test::Expander -target => undef;
 
-# Tries to automatically determine, which class / module is to be tested,
-# does not determine method / subroutine to be tested:
-use Test::Expander -method => undef;
+    # Tries to automatically determine, which class / module is to be tested,
+    # does not determine method / subroutine to be tested:
+    use Test::Expander -method => undef;
 
-# Adds directories 'dir0' and 'dir1' located in the temporary directory created during the execution
-# at the beginning of directory list used by the Perl interpreter for search of modules to be loaded.
-# In other words, "unshifts" these directories to the @INC array:
-use Test::Expander
-    -lib => [
-    'path( $TEMP_DIR )->child( qw( dir0 ) )->stringify',
-    'path( $TEMP_DIR )->child( qw( dir1 ) )->stringify',
-    ],
-    -tempdir => {};
+    # Adds directories 'dir0' and 'dir1' located in the temporary directory created during the execution
+    # at the beginning of directory list used by the Perl interpreter for search of modules to be loaded.
+    # In other words, "unshifts" these directories to the @INC array:
+    use Test::Expander
+      -lib => [
+        'path( $TEMP_DIR )->child( qw( dir0 ) )->stringify',
+        'path( $TEMP_DIR )->child( qw( dir1 ) )->stringify',
+      ],
+      -tempdir => {};
 ```
-
 # DESCRIPTION
+
+The primary objective of **Test::Expander** is to provide additional convenience while testing based on
+[Test2::V0](https://metacpan.org/pod/Test2::V0) considering boilerplate aspects that seem to be important
+(to the author) in notable number of cases.
+These are among other things:
+
+- Repeated application of class / module and / or method / function to be tested.
+This, of course, can be stored in additional variables declared somewhere at the very beginning of test.
+
+    Doing so, any refactoring including renaming of this class and / or method leads to the necessity to find and then
+    to update all test files containing these names.
+
+    If, however, both of these values can be determined from the path and base name of the current test file and saved
+    in the exported read-only variables **$CLASS** and **$METHOD**, the only effort necessary in case of such renaming is
+    a single change of path and / or base name of the corresponding test file.
+
+    An additional benefit of suggested approach is a better readability of tests, where chunks like
+```perl
+        Foo::Bar->baz( $arg0, $arg1 )
+```
+    now look like
+```perl
+        $CLASS->$METHOD( $arg0, $arg1 )
+```
+    and hence clearly manifest that this chunk is about the testee.
+
+- The frequent necessity of introduction of temporary directory and / or temporary file usually leads to the usage of
+modules [File::Temp::tempdir](https://metacpan.org/pod/File::Temp) or [Path::Tiny](https://metacpan.org/pod/Path::Tiny)
+providing the methods / funtions **tempdir** and **tempfile**.
+
+    This, however, can significantly be simplified (and the size of test file can be reduced) requesting such introduction
+    via the options supported by **Test::Expander**:
+```perl
+        use Test::Expander -tempdir => {}, -tempfile => {};
+```
+- Another fuctionality frequently used in tests relates to the work with files and directories:
+reading, writing, creation, etc. Because almost all features required in such cases are provided by
+[Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module is also exported from
+**Test::Expander**.
+- Last but not least. To provide a really environment-independent testing, we need a possibility to run our tests in
+a clean environment, where only explicitly mentioned environment variables are set.
+This can also be achieved manually by manipulation of **%ENV** hash at the very beginning of tests.
+However, even ignoring the test code inflation, this might be (in fact - is) necessary in many tests belonging to one
+and the same module, so that a possibility to outsource the definition of test environment provided by **Test::Expander**
+makes tests smaller, more maintainable, and much more reliable.
 
 **Test::Expander** combines all advanced possibilities provided by [Test2::V0](https://metacpan.org/pod/Test2::V0)
 with some specific functions only available in the older module [Test::More](https://metacpan.org/pod/Test::More)
@@ -56,11 +99,6 @@ A similar recognition is provided in regard to the method / subroutine to be tes
 (see variables **$METHOD** and **$METHOD\_REF** below) if the base name (without extension) of test file is
 identical with the name of this method / subroutine i.e. file **t/Foo/Bar/baz.t**
 corresponds to method / subroutine **Foo::Bar::bar**.
-
-You can additionally to the default functionality bundled and provided by this module apply some features from other
-convenient modules like [Test::Cmd](https://metacpan.org/pod/Test::Cmd),
-[Test::Fatal](https://metacpan.org/pod/Test::Fatal), etc.
-In this case functions with the same names as the ones defined in **Test::Expander** will NOT be re-exported.
 
 Finally, a configurable setting of specific environment variables is provided so that
 there is no need to hard-code this in the test itself.
@@ -111,16 +149,14 @@ The only exception currently known is the case, when some actions performed on t
 To explain this let us assume that your test file should mock the built-in **close**
 to verify if the testee properly reacts both on its success and failure.
 For this purpose a reasonable implementation might look as follows:
-
 ```perl
-my $closeSuccess = 1;
-BEGIN {
-    *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close($_[0]) : 0 }
-}
+    my $closeSuccess = 1;
+    BEGIN {
+      *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close($_[0]) : 0 }
+    }
 
-use Test::Expander;
+    use Test::Expander;
 ```
-
 The automated recognition of name of class / module to be tested can only work
 if the test file is located in the corresponding subdirectory.
 For instance, if the class / module to be tested is _Foo::Bar::Baz_, then the folder with test files
@@ -128,11 +164,9 @@ related to this class / module should be **t/**_Foo_**/**_Bar_**/**_Baz_ or **xt
 (the name of the top-level directory in this relative name - **t**, or **xt**, or **my\_test** is not important) -
 otherwise the module name cannot be put into the exported variable **$CLASS** and, if you want to use this variable,
 should be supplied as the value of **-target**:
-
 ```perl
-use Test::Expander -target => 'Foo::Bar::Baz';
+    use Test::Expander -target => 'Foo::Bar::Baz';
 ```
-
 This recognition can explicitly be deactivated if the value of **-target** is **undef**, so that no class / module
 will be loaded and, correspondingly, the variables **$CLASS**, **$METHOD**, and **$METHOD\_REF** will not be exported.
 
@@ -144,11 +178,9 @@ to be tested and its reference, correspondingly, otherwise both variables are ne
 
 Also in this case evaluation and export of the variables **$METHOD** and **$METHOD\_REF** can be prevented
 by passing of **undef** as value of the option **-method**:
-
 ```perl
-use Test::Expander -target => undef;
+    use Test::Expander -target => undef;
 ```
-
 Finally, **Test::Expander** supports testing inside of a clean environment containing only some clearly
 specified environment variables required for the particular test.
 Names and values of these environment variables should be configured in files,
@@ -252,6 +284,11 @@ if the method / subroutine recognition is not disable and possible,
 if the option **-tempdir** is supplied,
 - variable **$TEMP\_FILE** containing the name of a temporary file created at compile time
 if the option **-tempfile** is supplied.
+- variable **$TEST\_FILE** containing the absolute name of the current test file.
+In fact its content is identical with the content of special token
+[\_\_FILE\_\_](https://perldoc.perl.org/functions/__FILE__), but only in the test file itself!
+If, however, you need the test file name in a test submodule or in a **.env** file belonging to this test,
+[\_\_FILE\_\_](https://perldoc.perl.org/functions/__FILE__) can no longer be applied - whereas **$TEST\_FILE** is there.
 
 All variables mentioned above are read-only after their export.
 In this case they are logged to STDOUT using [note](https://metacpan.org/pod/Test2::Tools::Basic#DIAGNOSTICS).

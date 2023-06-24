@@ -11,7 +11,7 @@ B<Test::Expander> - Expansion of test functionalities that appear to be frequent
   use Test::Expander;
 
   # Tries to automatically determine, which class / module and method / subroutine are to be tested,
-  # does not create a temporary directory, passes the option '-srand' to Test::V0 changing
+  # does not create a temporary directory, passes the option '-srand' to Test2::V0 changing
   # the random seed to the current time in seconds:
   use Test::Expander -srand => time;
 
@@ -38,6 +38,64 @@ B<Test::Expander> - Expansion of test functionalities that appear to be frequent
 
 =head1 DESCRIPTION
 
+The primary objective of B<Test::Expander> is to provide additional convenience while testing based on
+L<Test2::V0|https://metacpan.org/pod/Test2::V0> considering boilerplate aspects that seem to be important
+(to the author) in notable number of cases.
+These are among other things:
+
+=over 2
+
+=item
+
+Repeated application of class / module and / or method / function to be tested.
+This, of course, can be stored in additional variables declared somewhere at the very beginning of test.
+
+Doing so, any refactoring including renaming of this class and / or method leads to the necessity to find and then
+to update all test files containing these names.
+
+If, however, both of these values can be determined from the path and base name of the current test file and saved
+in the exported read-only variables B<$CLASS> and B<$METHOD>, the only effort necessary in case of such renaming is
+a single change of path and / or base name of the corresponding test file.
+
+An additional benefit of suggested approach is a better readability of tests, where chunks like
+
+  Foo::Bar->baz( $arg0, $arg1 )
+
+now look like
+
+  $CLASS->$METHOD( $arg0, $arg1 )
+
+and hence clearly manifest that this chunk is about the testee.
+
+=item
+
+The frequent necessity of introduction of temporary directory and / or temporary file usually leads to the usage of
+modules L<File::Temp::tempdir|https://metacpan.org/pod/File::Temp> or L<Path::Tiny|https://metacpan.org/pod/Path::Tiny>
+providing the methods / funtions B<tempdir> and B<tempfile>.
+
+This, however, can significantly be simplified (and the size of test file can be reduced) requesting such introduction
+via the options supported by B<Test::Expander>:
+
+  use Test::Expander -tempdir => {}, -tempfile => {};
+
+=item
+
+Another fuctionality frequently used in tests relates to the work with files and directories:
+reading, writing, creation, etc. Because almost all features required in such cases are provided by
+L<Path::Tiny|https://metacpan.org/pod/Path::Tiny>, some functions of this module is also exported from
+B<Test::Expander>.
+
+=item
+
+Last but not least. To provide a really environment-independent testing, we need a possibility to run our tests in
+a clean environment, where only explicitly mentioned environment variables are set.
+This can also be achieved manually by manipulation of B<%ENV> hash at the very beginning of tests.
+However, even ignoring the test code inflation, this might be (in fact - is) necessary in many tests belonging to one
+and the same module, so that a possibility to outsource the definition of test environment provided by B<Test::Expander>
+makes tests smaller, more maintainable, and much more reliable.
+
+=back
+
 B<Test::Expander> combines all advanced possibilities provided by L<Test2::V0|https://metacpan.org/pod/Test2::V0>
 with some specific functions only available in the older module L<Test::More|https://metacpan.org/pod/Test::More>
 (which allows a smooth migration from L<Test::More|https://metacpan.org/pod/Test::More>-based tests to
@@ -56,11 +114,6 @@ A similar recognition is provided in regard to the method / subroutine to be tes
 (see variables B<$METHOD> and B<$METHOD_REF> below) if the base name (without extension) of test file is
 identical with the name of this method / subroutine i.e. file B<t/Foo/Bar/baz.t>
 corresponds to method / subroutine B<Foo::Bar::bar>.
-
-You can additionally to the default functionality bundled and provided by this module apply some features from other
-convenient modules like L<Test::Cmd|https://metacpan.org/pod/Test::Cmd>,
-L<Test::Fatal|https://metacpan.org/pod/Test::Fatal>, etc.
-In this case functions with the same names as the ones defined in B<Test::Expander> will NOT be re-exported.
 
 Finally, a configurable setting of specific environment variables is provided so that
 there is no need to hard-code this in the test itself.
@@ -425,6 +478,14 @@ if the option B<-tempdir> is supplied,
 
 variable B<$TEMP_FILE> containing the name of a temporary file created at compile time
 if the option B<-tempfile> is supplied.
+
+=item
+
+variable B<$TEST_FILE> containing the absolute name of the current test file.
+In fact its content is identical with the content of special token
+L<__FILE__|https://perldoc.perl.org/functions/__FILE__>, but only in the test file itself!
+If, however, you need the test file name in a test submodule or in a B<.env> file belonging to this test,
+L<__FILE__|https://perldoc.perl.org/functions/__FILE__> can no longer be applied - whereas B<$TEST_FILE> is there.
 
 =back
 

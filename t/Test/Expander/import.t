@@ -18,7 +18,7 @@ BEGIN {
     qw( cwd path ),
     qw( BAIL_OUT dies_ok is_deeply lives_ok new_ok require_ok use_ok ),
   );
-  @variables = qw( $CLASS $METHOD $METHOD_REF $TEMP_DIR $TEMP_FILE );
+  @variables = qw( $CLASS $METHOD $METHOD_REF $TEMP_DIR $TEMP_FILE $TEST_FILE );
 }
 
 use Scalar::Readonly          qw( readonly_off );
@@ -54,6 +54,7 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 like( dies { $CLASS->$METHOD( -lib => {} ) }, qr/$expected/, $title );
 test_test( $title );
@@ -65,6 +66,7 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 like( dies { $CLASS->$METHOD( -lib => [ {} ] ) }, qr/$expected/, $title );
 test_test( $title );
@@ -76,6 +78,7 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 like( dies { $CLASS->$METHOD( -lib => [ 'ref(' ] ) }, qr/$expected/, $title );
 test_test( $title );
@@ -88,11 +91,12 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 {
-  my $mockImporter = mock 'Importer'  => ( override => [ import_into    => sub {} ] );
+  my $mockImporter = mock 'Importer'  => ( override => [ import_into     => sub {} ] );
   my $mockSelf     = mock $CLASS      => ( override => [ _export_symbols => sub {} ] );
-  my $mockTest2    = mock 'Test2::V0' => ( override => [ import         => sub {} ] );
+  my $mockTest2    = mock 'Test2::V0' => ( override => [ import          => sub {} ] );
   is( $CLASS->$METHOD( -lib => [ 'path( $TEMP_DIR )->child( qw( my_root ) )->stringify' ] ), undef, $title );
 }
 test_test( $title );
@@ -109,6 +113,7 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 like( dies { $CLASS->$METHOD( -method => {} ) }, qr/$expected/, $title );
 test_test( $title );
@@ -120,6 +125,7 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 like( dies { $CLASS->$METHOD( -tempdir => 1 ) }, qr/$expected/, $title );
 test_test( $title );
@@ -131,6 +137,7 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 like( dies { $CLASS->$METHOD( -tempfile => 1 ) }, qr/$expected/, $title );
 test_test( $title );
@@ -142,6 +149,7 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 like( dies { $CLASS->$METHOD( unknown => 1 ) }, qr/$expected/, $title );
 test_test( $title );
@@ -153,6 +161,7 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 like( dies { $CLASS->$METHOD( 'unknown' ) }, qr/$expected/, $title );
 test_test( $title );
@@ -164,12 +173,14 @@ readonly_off( $METHOD );
 readonly_off( $METHOD_REF );
 readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
 test_out(
   join(
     "\n",
     sprintf( "# $FMT_SET_TO", '$CLASS',     $CLASS ),
     sprintf( "# $FMT_SET_TO", '$TEMP_DIR',  $TEMP_DIR ),
     sprintf( "# $FMT_SET_TO", '$TEMP_FILE', $TEMP_FILE ),
+    sprintf( "# $FMT_SET_TO", '$TEST_FILE', path( __FILE__ )->absolute ),
     "ok 1 - $title",
   )
 );
