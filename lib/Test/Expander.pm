@@ -66,11 +66,10 @@ sub import {
   }
   my $options = _parse_options( \@exports, $test_file );
 
+  _export_symbols( $options, $test_file );
   _set_env( $options->{ -target }, $test_file );
 
-  _export_symbols( $options, $test_file );
   Test2::V0->import( %$options );
-
   Importer->import_into( $class, scalar( caller ), () );
 
   return;
@@ -218,7 +217,7 @@ sub _parse_options {
       }
       when ( '-method' ) {
         my $option_value = shift( @$exports );
-        $DIE-> ( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value );
+        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value );
         $METHOD = $options->{ -method } = $option_value;
       }
       when ( '-target' ) {

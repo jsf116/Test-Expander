@@ -5,28 +5,31 @@
 # SYNOPSIS
 ```perl
     # Tries to automatically determine, which class / module and method / subroutine are to be tested,
-    # does not create a temporary directory:
+    # creates neither a temporary directory, nor a temporary file:
     use Test::Expander;
 
     # Tries to automatically determine, which class / module and method / subroutine are to be tested,
-    # does not create a temporary directory, passes the option '-srand' to Test2::V0 changing
-    # the random seed to the current time in seconds:
+    # creates neither a temporary directory, nor a temporary file,
+    # passes the option '-srand' to Test2::V0 changing the random seed to the current time in seconds:
     use Test::Expander -srand => time;
 
     # Class is supplied explicitly, tries to automatically determine method / subroutine to be tested,
-    # a temporary directory is created with a name corresponing to the template supplied:
+    # creates a temporary directory with name corresponing to the template supplied, does not create temporary file:
     use Test::Expander -target => 'My::Class', -tempdir => { TEMPLATE => 'my_dir.XXXXXXXX' };
 
-    # Does not try to determine, which class / module and method / subroutine are to be tested:
+    # Does not try to determine, which class / module and method / subroutine are to be tested,
+    # creates neither a temporary directory, nor a temporary file:
     use Test::Expander -target => undef;
 
     # Tries to automatically determine, which class / module is to be tested,
-    # does not determine method / subroutine to be tested:
+    # does not determine method / subroutine to be tested,
+    # creates neither a temporary directory, nor a temporary file:
     use Test::Expander -method => undef;
 
-    # Adds directories 'dir0' and 'dir1' located in the temporary directory created during the execution
-    # at the beginning of directory list used by the Perl interpreter for search of modules to be loaded.
-    # In other words, "unshifts" these directories to the @INC array:
+    # Tries to automatically determine, which class / module is to be tested,
+    # does not create temporary file, creates a temporary directory and
+    # adds directories 'dir0' and 'dir1' located therein on top of the directory list used by the Perl interpreter
+    # for search of modules to be loaded. In other words, "unshifts" these directories to the @INC array:
     use Test::Expander
       -lib => [
         'path( $TEMP_DIR )->child( qw( dir0 ) )->stringify',
@@ -74,7 +77,7 @@ providing the methods / funtions **tempdir** and **tempfile**.
 reading, writing, creation, etc. Because almost all features required in such cases are provided by
 [Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module is also exported from
 **Test::Expander**.
-- Last but not least. To provide a really environment-independent testing, we need a possibility to run our tests in
+- Last but not least. To provide a really environment-independent testing, we might need a possibility to run our tests in
 a clean environment, where only explicitly mentioned environment variables are set.
 This can also be achieved manually by manipulation of **%ENV** hash at the very beginning of tests.
 However, even ignoring the test code inflation, this might be (in fact - is) necessary in many tests belonging to one
@@ -114,7 +117,7 @@ The following options are accepted:
         Among other things this provides a possibility to temporary expand the module search path by directories located
         in the temporary directory if the latter is defined with the option **-tempdir** (see below).
 
-        **-lib** is interpreted as the very last option, that's why the variabels defined by **Test::Expander** for export
+        **-lib** is interpreted as the very last option, that's why the variables defined by **Test::Expander** for export
         e.g. **$TEMP\_DIR** can be used in the expressions determining such directories (see **SYNOPSYS** above).
 
     - **-method** - prevent any attempt to automatically determine method / subroutine to be tested.
