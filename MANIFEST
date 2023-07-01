@@ -11,8 +11,11 @@ t/.perlcriticrc
 t/.proverc
 t/.proverc-cover
 t/Test/Expander/_error.t
+t/Test/Expander/_new_test_message.t
 t/Test/Expander/_newTestMessage.t
+t/Test/Expander/_set_env.t
 t/Test/Expander/_setEnv.t
+t/Test/Expander/_use_imports.t
 t/Test/Expander/_useImports.t
 t/Test/Expander/compare_ok.t
 t/Test/Expander/compare_ok/expected
@@ -27,4 +30,6 @@ t/Test/Expander/NoCLASS/NoMETHOD_only.t
 t/Test/Expander/require_ok.t
 t/Test/Expander/throws_ok.t
 t/Test/Expander/use_ok.t
+Test-Expander-1.1.1.tar.gz
+Test-Expander-2.0.0.tar.gz
 test.results
