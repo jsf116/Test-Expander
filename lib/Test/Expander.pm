@@ -31,7 +31,7 @@ use Test::Expander::Constants qw(
   $NOTE
   $REGEX_ANY_EXTENSION $REGEX_CLASS_HIERARCHY_LEVEL $REGEX_TOP_DIR_IN_PATH $REGEX_VERSION_NUMBER
   $TRUE
-  %CONSTANTS_TO_EXPORT
+  %MOST_CONSTANTS_TO_EXPORT %REST_CONSTANTS_TO_EXPORT
 );
 
 readonly_on( $VERSION );
@@ -66,10 +66,12 @@ sub import {
   }
   my $options = _parse_options( \@exports, $test_file );
 
-  _export_symbols( $options, $test_file );
+  _export_most_symbols( $options, $test_file );
   _set_env( $options->{ -target }, $test_file );
 
   Test2::V0->import( %$options );
+
+  _export_rest_symbols();
   Importer->import_into( $class, scalar( caller ), () );
 
   return;
@@ -178,21 +180,31 @@ sub _error {
   return $error;
 }
 
-sub _export_symbols {
+sub _export_most_symbols {
   my ( $options, $test_file ) = @_;
 
   $TEST_FILE = path( $test_file )->absolute->stringify;
-  foreach my $var ( sort keys( %CONSTANTS_TO_EXPORT ) ) {   # Export defined constants
-    no strict qw( refs );                                   ## no critic (ProhibitProlongedStrictureOverride)
-    my $value = eval( "${ \$var }" ) or next;
-    readonly_on( ${ __PACKAGE__ . '::' . $var =~ s/^.//r } );
-    push( @EXPORT, $var );
-    $NOTE->( $FMT_SET_TO, $var, $CONSTANTS_TO_EXPORT{ $var }->( $value, $CLASS ) );
 
-    if ( $var eq '$CLASS' ) {                               # Export method constants only if class is known
-      $METHOD_REF = $CLASS->can( $METHOD );
-      $METHOD     = undef unless( $METHOD_REF );
-    }
+  return _export_symbols( %MOST_CONSTANTS_TO_EXPORT );
+}
+
+sub _export_rest_symbols {
+                                                            # Further export if class and method are known
+  return _export_symbols( %REST_CONSTANTS_TO_EXPORT ) if $CLASS && $METHOD && ( $METHOD_REF = $CLASS->can( $METHOD ) );
+
+  $METHOD = undef;
+  return;
+}
+
+sub _export_symbols {
+  my %constants = @_;
+
+  foreach my $name ( sort keys( %constants ) ) {            # Export defined constants
+    no strict qw( refs );                                   ## no critic (ProhibitProlongedStrictureOverride)
+    my $value = eval( "${ \$name }" ) or next;
+    readonly_on( ${ __PACKAGE__ . '::' . $name =~ s/^.//r } );
+    push( @EXPORT, $name );
+    $NOTE->( $FMT_SET_TO, $name, $constants{ $name }->( $value, $CLASS ) );
   }
 
   return;

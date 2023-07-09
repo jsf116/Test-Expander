@@ -22,7 +22,7 @@ BEGIN {
 }
 
 use Scalar::Readonly          qw( readonly_off );
-use Test::Builder::Tester     tests => @functions + @variables + 12;
+use Test::Builder::Tester     tests => @functions + @variables + 14;
 
 use Test::Expander            -target   => 'Test::Expander',
                               -tempdir  => { CLEANUP => 1 },
@@ -192,6 +192,37 @@ test_out(
 test_test( $title );
 
 $title    = "valid '-method' (assigned method name)";
+$expected = undef;
+test_out( "ok 1 - $title" );
+is( $METHOD, $expected, $title );
+test_test( $title );
+
+$title    = "omitted '-method', '-target' => undef (return value)";
+$expected = undef;
+readonly_off( $CLASS );
+readonly_off( $METHOD );
+readonly_off( $METHOD_REF );
+readonly_off( $TEMP_DIR );
+readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
+test_out(
+  join(
+    "\n",
+    sprintf( "# $FMT_SET_TO", '$CLASS',     $CLASS ),
+    sprintf( "# $FMT_SET_TO", '$TEMP_DIR',  $TEMP_DIR ),
+    sprintf( "# $FMT_SET_TO", '$TEMP_FILE', $TEMP_FILE ),
+    sprintf( "# $FMT_SET_TO", '$TEST_FILE', path( __FILE__ )->absolute ),
+    "ok 1 - $title",
+  )
+);
+{
+  my $mockImporter = mock 'Importer'  => ( override => [ import_into => sub {} ] );
+  my $mockTest2    = mock 'Test2::V0' => ( override => [ import      => sub {} ] );
+  is( dies { $CLASS->import( -method => undef, -target => undef ) }, $expected, $title );
+}
+test_test( $title );
+
+$title    = "omitted '-method', '-target' => undef (assigned method name)";
 $expected = undef;
 test_out( "ok 1 - $title" );
 is( $METHOD, $expected, $title );

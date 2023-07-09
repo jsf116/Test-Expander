@@ -50,13 +50,15 @@ const our $REGEX_VERSION_NUMBER        => qr/^ \d+ (?: \. \d+ )* $/x;
 
 const our $TRUE                        => 1;
 
-const our %CONSTANTS_TO_EXPORT         => (
+const our %MOST_CONSTANTS_TO_EXPORT    => (
   '$CLASS'      => sub { $_[ 0 ] },
-  '$METHOD'     => sub { $_[ 0 ] },
-  '$METHOD_REF' => sub { '\&' . $_[ 1 ] . '::' . svref_2object( $_[ 0 ] )->GV->NAME },
   '$TEMP_DIR'   => sub { $_[ 0 ] },
   '$TEMP_FILE'  => sub { $_[ 0 ] },
   '$TEST_FILE'  => sub { $_[ 0 ] },
+);
+const our %REST_CONSTANTS_TO_EXPORT    => (
+  '$METHOD'     => sub { $_[ 0 ] },
+  '$METHOD_REF' => sub { '\&' . $_[ 1 ] . '::' . svref_2object( $_[ 0 ] )->GV->NAME },
 );
 
 push( our @EXPORT_OK, keys( %{ peek_our( 0 ) } ) );
