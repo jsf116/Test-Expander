@@ -1,6 +1,6 @@
 Changelog for Test-Expander
 
-2.0.0 2023-06-21 19:42:51 UTC
+2.0.1 2023-06-21 19:42:51 UTC
     - If any of the variables $CLASS, $METHOD, $METHOD_REF, $TEMP_DIR, and $TEMP_FILE is undefined, it is not exported.
     - Modules Test::Cmd, Test::Files, Test::Output, and Test::Warn are no longer loaded and their functions are not exported by Test::Expander.
     - Unexpedted exceptions detected by "lives_ok" are logged to the screen using "diag".

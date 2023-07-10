@@ -30,6 +30,4 @@ t/Test/Expander/NoCLASS/NoMETHOD_only.t
 t/Test/Expander/require_ok.t
 t/Test/Expander/throws_ok.t
 t/Test/Expander/use_ok.t
-Test-Expander-1.1.1.tar.gz
-Test-Expander-2.0.0.tar.gz
 test.results
