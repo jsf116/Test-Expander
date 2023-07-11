@@ -1,5 +1,8 @@
 Changelog for Test-Expander
 
+2.0.2 2023-07-11 09:47:03 UTC
+    - Increase required version of Path::Tiny to 0.125 to make possible the usage of mkdir.
+
 2.0.1 2023-06-21 19:42:51 UTC
     - If any of the variables $CLASS, $METHOD, $METHOD_REF, $TEMP_DIR, and $TEMP_FILE is undefined, it is not exported.
     - Modules Test::Cmd, Test::Files, Test::Output, and Test::Warn are no longer loaded and their functions are not exported by Test::Expander.

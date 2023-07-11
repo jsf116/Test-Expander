@@ -78,7 +78,8 @@ reading, writing, creation, etc. Because almost all features required in such ca
 [Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module is also exported from
 **Test::Expander**.
 - Last but not least. To provide a really environment-independent testing, we might need a possibility to run our tests in
-a clean environment, where only explicitly mentioned environment variables are set.
+a clean environment, where only explicitly mentioned environment variables are set and environment variables from the
+"outside world" cannot affect the execution of tests.
 This can also be achieved manually by manipulation of **%ENV** hash at the very beginning of tests.
 However, even ignoring the test code inflation, this might be (in fact - is) necessary in many tests belonging to one
 and the same module, so that a possibility to outsource the definition of test environment provided by **Test::Expander**
@@ -146,19 +147,27 @@ The following options are accepted:
 
 **Test::Expander** is recommended to be the very first module in your test file.
 
-The only exception currently known is the case, when some actions performed on the module level
-(e.g. determination of constants) rely upon results of other actions (e.g. mocking of built-ins).
+The known exceptions are:
 
-To explain this let us assume that your test file should mock the built-in **close**
-to verify if the testee properly reacts both on its success and failure.
-For this purpose a reasonable implementation might look as follows:
+- When another module is used, which in turn is based on [Test::Builder](https://metacpan.org/pod/Test::Builder) e.g.
+[Test::Output](https://metacpan.org/pod/Test::Output):
 ```perl
-    my $closeSuccess = 1;
-    BEGIN {
-      *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close($_[0]) : 0 }
-    }
+        use Test::Output;
+        use Test::Expander;
+```
+- When some actions performed on the module level (e.g. determination of constants)
+rely upon results of other actions (e.g. mocking of built-ins).
 
-    use Test::Expander;
+    To explain this let us assume that your test file should mock the built-in **close**
+    to verify if the testee properly reacts both on its success and failure.
+    For this purpose a reasonable implementation might look as follows:
+```perl
+        my $closeSuccess = 1;
+        BEGIN {
+          *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close($_[0]) : 0 }
+        }
+
+        use Test::Expander;
 ```
 The automated recognition of name of class / module to be tested can only work
 if the test file is located in the corresponding subdirectory.
