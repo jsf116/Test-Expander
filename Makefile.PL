@@ -39,7 +39,7 @@ WriteMakefile(
 		resources               => {
 			repository              => {
 				type                    => 'git',
-				url                     => 'https://github.com/jsf116/Test-Expander.git',
+				url                     => 'git://github.com/jsf116/Test-Expander.git',
 				web                     => 'https://github.com/jsf116/Test-Expander',
 			},
 			bugtracker              => {

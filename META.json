@@ -1,0 +1,79 @@
+{
+   "abstract" : "Expansion of test functionalities that appear to be frequently used while testing.",
+   "author" : [
+      "Jurij Fajnberg <fajnbergj@gmail.com>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "JSF",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Test-Expander",
+   "no_index" : {
+      "directory" : [
+         "t"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0",
+            "Test::Simple" : "0"
+         }
+      },
+      "develop" : {
+         "suggests" : {
+            "App::Software::License" : "0",
+            "App::cpanminus" : "1.7046"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "B" : "0",
+            "Const::Fast" : "0",
+            "Exporter" : "0",
+            "File::chdir" : "0",
+            "File::Temp" : "0",
+            "Importer" : "0",
+            "PadWalker" : "0",
+            "Path::Tiny" : "0.125",
+            "Scalar::Readonly" : "0",
+            "Test2::Tools::Basic" : "0",
+            "Test2::Tools::Explain" : "0",
+            "Test2::V0" : "0",
+            "perl" : "5.008009"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test::Simple" : "0"
+         }
+      }
+   },
+   "provides" : {
+      "Test::Expander" : {
+         "file" : "lib/Test/Expander.pm",
+         "version" : "2.0.3"
+      },
+      "Test::Expander::Constants" : {
+         "file" : "lib/Test/Expander/Constants.pm",
+         "version" : "2.0.3"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/jsf116/Test-Expander/issues"
+      },
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/jsf116/Test-Expander.git",
+         "web" : "https://github.com/jsf116/Test-Expander"
+      }
+   },
+   "version" : "2.0.3"
+}
