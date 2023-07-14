@@ -32,58 +32,70 @@ $testPath->child( $classPath )->mkpath;
     my $name  = 'ABC';
     my $value = '$' . __PACKAGE__ . '::var';
     $envFile->spew( "$name = $value\nJust a comment line\nX\nY" );
-    %ENV = ( xxx => 'yyy', X => 'A' );
+    %ENV = ( XXX => 'yyy', X => 'A' );
 
     ok( lives { $METHOD_REF->( $CLASS, $testFile ) }, 'successfully executed' );
-    is( \%ENV, { $name => lc( $name ), X => 'A' },    "'%ENV' has the expected content" );
+    my $expected = { $name => lc( $name ), X => 'A' };
+    $expected->{ PWD } = $ENV{ PWD } if exists( $ENV{ PWD } );
+    is( \%ENV, $expected,                             "'%ENV' has the expected content" );
   };
 
   subtest 'env variable filled by a self-implemented sub' => sub {
     my $name  = 'ABC';
     my $value = __PACKAGE__ . "::testEnv( lc( '$name' ) )";
     $envFile->spew( "$name = $value" );
-    %ENV = ( xxx => 'yyy' );
+    %ENV = ( XXX => 'yyy' );
 
     ok( lives { $METHOD_REF->( $CLASS, $testFile ) }, 'successfully executed' );
-    is( \%ENV, { $name => lc( $name ) },              "'%ENV' has the expected content" );
+    my $expected = { $name => lc( $name ) };
+    $expected->{ PWD } = $ENV{ PWD } if exists( $ENV{ PWD } );
+    is( \%ENV, $expected,                             "'%ENV' has the expected content" );
   };
 
   subtest "env variable filled by a 'File::Temp::tempdir'" => sub {
     my $name  = 'ABC';
     my $value = 'File::Temp::tempdir';
     $envFile->spew( "$name = $value" );
-    %ENV = ( xxx => 'yyy' );
+    %ENV = ( XXX => 'yyy' );
 
-    ok( lives { $METHOD_REF->( $CLASS, $testFile ) }, 'successfully executed' );
-    is( [ keys( %ENV ) ], [ $name ],                  "'%ENV' has the expected keys" );
-    ok( -d $ENV{ $name },                             'temporary directory exists' );
+    ok( lives { $METHOD_REF->( $CLASS, $testFile ) },      'successfully executed' );
+    my %expected = ( $name => $value );
+    $expected{ PWD } = $ENV{ PWD } if exists( $ENV{ PWD } );
+    is( [ sort keys( %ENV ) ], [ sort keys( %expected ) ], "'%ENV' has the expected keys" );
+    ok( -d $ENV{ $name },                                  'temporary directory exists' );
   };
 
   subtest 'env file does not exist' => sub {
     $envFile->remove;
-    %ENV = ( xxx => 'yyy' );
+    %ENV = ( XXX => 'yyy' );
 
     ok( lives { $METHOD_REF->( $CLASS, $testFile ) }, 'successfully executed' );
-    is( \%ENV, { xxx => 'yyy' },                      "'%ENV' remained unchanged" );
+    my $expected = { XXX => 'yyy' };
+    $expected->{ PWD } = $ENV{ PWD } if exists( $ENV{ PWD } );
+    is( \%ENV, $expected,                             "'%ENV' remained unchanged" );
   };
 
   subtest 'directory structure does not correspond to class hierarchy' => sub {
     $envFile->remove;
-    %ENV = ( xxx => 'yyy' );
+    %ENV = ( XXX => 'yyy' );
 
     ok( lives { $METHOD_REF->( 'ABC::' . $CLASS, $testFile ) }, 'successfully executed' );
-    is( \%ENV, { xxx => 'yyy' },                                "'%ENV' remained unchanged" );
+    my $expected = { XXX => 'yyy' };
+    $expected->{ PWD } = $ENV{ PWD } if exists( $ENV{ PWD } );
+    is( \%ENV, $expected,                                       "'%ENV' remained unchanged" );
   };
 
   subtest 'env files exist on multiple levels' => sub {
     path( $envFile->parent         . '.env' )->spew( "A = '1'\nB = '2'" );
     path( $envFile->parent->parent . '.env' )->spew( "C = '0'" );
     $envFile->spew( "C = '3'" );
-    %ENV = ( xxx => 'yyy' );
+    %ENV = ( XXX => 'yyy' );
 
     local $CWD = $TEMP_DIR;                                 ## no critic (ProhibitLocalVars)
     ok( lives { $METHOD_REF->( $CLASS, $testFile ) }, 'successfully executed' );
-    is( \%ENV, { A => '1', B => '2', C => '3' },      "'%ENV' has the expected content" );
+    my $expected = { A => '1', B => '2', C => '3' };
+    $expected->{ PWD } = $ENV{ PWD } if exists( $ENV{ PWD } );
+    is( \%ENV, $expected,                             "'%ENV' has the expected content" );
   };
 
   subtest 'env file invalid' => sub {

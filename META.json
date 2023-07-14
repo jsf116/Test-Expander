@@ -57,11 +57,11 @@
    "provides" : {
       "Test::Expander" : {
          "file" : "lib/Test/Expander.pm",
-         "version" : "2.0.3"
+         "version" : "2.0.4"
       },
       "Test::Expander::Constants" : {
          "file" : "lib/Test/Expander/Constants.pm",
-         "version" : "2.0.3"
+         "version" : "2.0.4"
       }
    },
    "release_status" : "stable",
@@ -75,5 +75,5 @@
          "web" : "https://github.com/jsf116/Test-Expander"
       }
    },
-   "version" : "2.0.3"
+   "version" : "2.0.4"
 }

@@ -1,7 +1,10 @@
 Changelog for Test-Expander
 
+2.0.4 2023-07-14
+    - Fix PWD issue specific for MS Windows only.
+
 2.0.3 2023-07-13
-    - Fix Kwalitee issues
+    - Fix Kwalitee issues,
 
 2.0.2 2023-07-11
     - Increase required version of Path::Tiny to 0.125 to make possible the usage of mkdir.
