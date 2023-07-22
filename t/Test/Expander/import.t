@@ -22,7 +22,7 @@ BEGIN {
 }
 
 use Scalar::Readonly          qw( readonly_off );
-use Test::Builder::Tester     tests => @functions + @variables + 14;
+use Test::Builder::Tester     tests => @functions + @variables + 16;
 
 use Test::Expander            -target   => 'Test::Expander',
                               -tempdir  => { CLEANUP => 1 },
@@ -47,6 +47,30 @@ foreach my $variable ( sort @variables ) {
 
 my ( $title, $expected );
 
+$title    = "invalid value type of '-builtins'";
+$expected = $FMT_INVALID_VALUE =~ s/%s/.+/gr;
+readonly_off( $CLASS );
+readonly_off( $METHOD );
+readonly_off( $METHOD_REF );
+readonly_off( $TEMP_DIR );
+readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
+test_out( "ok 1 - $title" );
+throws_ok { $CLASS->$METHOD( -builtins => [] ) } qr/$expected/, $title;
+test_test( $title );
+
+$title    = 'invalid type of a particular builtin mock';
+$expected = $FMT_INVALID_VALUE =~ s/%s/.+/gr;
+readonly_off( $CLASS );
+readonly_off( $METHOD );
+readonly_off( $METHOD_REF );
+readonly_off( $TEMP_DIR );
+readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
+test_out( "ok 1 - $title" );
+throws_ok { $CLASS->$METHOD( -builtins => { xxx => 'yyy' } ) } qr/$expected/, $title;
+test_test( $title );
+
 $title    = "invalid value type of '-lib'";
 $expected = $FMT_INVALID_VALUE =~ s/%s/.+/gr;
 readonly_off( $CLASS );
@@ -56,7 +80,7 @@ readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
-like( dies { $CLASS->$METHOD( -lib => {} ) }, qr/$expected/, $title );
+throws_ok { $CLASS->$METHOD( -lib => {} ) } qr/$expected/, $title;
 test_test( $title );
 
 $title    = "invalid directory type within '-lib'";
@@ -68,7 +92,7 @@ readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
-like( dies { $CLASS->$METHOD( -lib => [ {} ] ) }, qr/$expected/, $title );
+throws_ok { $CLASS->$METHOD( -lib => [ {} ] ) } qr/$expected/, $title;
 test_test( $title );
 
 $title    = "invalid directory value within '-lib'";
@@ -80,7 +104,7 @@ readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
-like( dies { $CLASS->$METHOD( -lib => [ 'ref(' ] ) }, qr/$expected/, $title );
+throws_ok { $CLASS->$METHOD( -lib => [ 'ref(' ] ) } qr/$expected/, $title;
 test_test( $title );
 
 path( $TEMP_DIR )->child( 'my_root' )->mkdir;
@@ -115,7 +139,7 @@ readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
-like( dies { $CLASS->$METHOD( -method => {} ) }, qr/$expected/, $title );
+throws_ok { $CLASS->$METHOD( -method => {} ) } qr/$expected/, $title;
 test_test( $title );
 
 $title    = "invalid value of '-tempdir'";
@@ -127,7 +151,7 @@ readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
-like( dies { $CLASS->$METHOD( -tempdir => 1 ) }, qr/$expected/, $title );
+throws_ok { $CLASS->$METHOD( -tempdir => 1 ) } qr/$expected/, $title;
 test_test( $title );
 
 $title    = "invalid value of '-tempfile'";
@@ -139,7 +163,7 @@ readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
-like( dies { $CLASS->$METHOD( -tempfile => 1 ) }, qr/$expected/, $title );
+throws_ok { $CLASS->$METHOD( -tempfile => 1 ) } qr/$expected/, $title;
 test_test( $title );
 
 $title    = 'unknown option with some value';
@@ -151,7 +175,7 @@ readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
-like( dies { $CLASS->$METHOD( unknown => 1 ) }, qr/$expected/, $title );
+throws_ok { $CLASS->$METHOD( unknown => 1 ) } qr/$expected/, $title;
 test_test( $title );
 
 $title    = 'unknown option without value';
@@ -163,7 +187,7 @@ readonly_off( $TEMP_DIR );
 readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
-like( dies { $CLASS->$METHOD( 'unknown' ) }, qr/$expected/, $title );
+throws_ok { $CLASS->$METHOD( 'unknown' ) } qr/$expected/, $title;
 test_test( $title );
 
 $title    = "valid '-method', '-target' => undef (return value)";

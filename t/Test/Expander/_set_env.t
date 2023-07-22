@@ -8,6 +8,7 @@ use warnings
 use File::chdir;
 
 use Test::Expander -tempdir => {}, -srand => time;
+use Test::Expander::Constants qw( $FMT_INVALID_ENV_ENTRY );
 
 $METHOD     //= '_set_env';
 $METHOD_REF //= $CLASS->can( $METHOD );
@@ -85,25 +86,38 @@ $testPath->child( $classPath )->mkpath;
     is( \%ENV, $expected,                                       "'%ENV' remained unchanged" );
   };
 
-  subtest 'env files exist on multiple levels' => sub {
-    path( $envFile->parent         . '.env' )->spew( "A = '1'\nB = '2'" );
+  subtest 'multiple levels of env files, cascade usage of their entries, overwrite entry' => sub {
     path( $envFile->parent->parent . '.env' )->spew( "C = '0'" );
+    path( $envFile->parent         . '.env' )->spew( "A = '1'\nB = '2'\nD = \$ENV{ A } . \$ENV{ C }" );
     $envFile->spew( "C = '3'" );
     %ENV = ( XXX => 'yyy' );
 
     local $CWD = $TEMP_DIR;                                 ## no critic (ProhibitLocalVars)
     ok( lives { $METHOD_REF->( $CLASS, $testFile ) }, 'successfully executed' );
-    my $expected = { A => '1', B => '2', C => '3' };
+    my $expected = { A => '1', B => '2', C => '3', D => '10' };
     $expected->{ PWD } = $ENV{ PWD } if exists( $ENV{ PWD } );
     is( \%ENV, $expected,                             "'%ENV' has the expected content" );
+
+    path( $envFile->parent->parent . '.env' )->remove;
+    path( $envFile->parent         . '.env' )->remove;
   };
 
-  subtest 'env file invalid' => sub {
+  subtest 'env file with invalid syntax' => sub {
     my $name  = 'ABC';
     my $value = 'abc->';
     $envFile->spew( "$name = $value" );
 
-    like( dies { $METHOD_REF->( $CLASS, $testFile ) }, qr/syntax error/, 'expected exception raised' );
+    my $expected = $FMT_INVALID_ENV_ENTRY =~ s/%d/0/r =~ s/%s/$envFile/r =~ s/%s/$name = $value/r =~ s/%s/.+/r;
+    like( dies { $METHOD_REF->( $CLASS, $testFile ) }, qr/$expected/, 'expected exception raised' );
+  };
+
+  subtest 'env file with undefined values' => sub {
+    my $name  = 'ABC';
+    my $value = '$undefined';
+    $envFile->spew( "$name = $value" );
+
+    my $expected = $FMT_INVALID_ENV_ENTRY =~ s/%d/0/r =~ s/%s/$envFile/r =~ s/%s/$name = $value/r =~ s/%s/.+/r =~ s/(\$)/\\$1/r;
+    like( dies { $METHOD_REF->( $CLASS, $testFile ) }, qr/$expected/m, 'expected exception raised' );
   };
 }
 

@@ -3,10 +3,14 @@
 **Test::Expander** - Expansion of test functionalities that appear to be frequently used while testing.
 
 # SYNOPSIS
-```perl
+
     # Tries to automatically determine, which class / module and method / subroutine are to be tested,
     # creates neither a temporary directory, nor a temporary file:
     use Test::Expander;
+
+    # Tries to automatically determine, which class / module and method / subroutine are to be tested,
+    # creates both a temporary directory and a temporary file preventing their removal after execution:
+    use Test::Expander -tempdir => { CLEANUP => 0 }, -tempfile => { UNLINK => 0 };
 
     # Tries to automatically determine, which class / module and method / subroutine are to be tested,
     # creates neither a temporary directory, nor a temporary file,
@@ -36,7 +40,7 @@
         'path( $TEMP_DIR )->child( qw( dir1 ) )->stringify',
       ],
       -tempdir => {};
-```
+
 # DESCRIPTION
 
 The primary objective of **Test::Expander** is to provide additional convenience while testing based on
@@ -55,13 +59,13 @@ This, of course, can be stored in additional variables declared somewhere at the
     a single change of path and / or base name of the corresponding test file.
 
     An additional benefit of suggested approach is a better readability of tests, where chunks like
-```perl
+
         Foo::Bar->baz( $arg0, $arg1 )
-```
+
     now look like
-```perl
+
         $CLASS->$METHOD( $arg0, $arg1 )
-```
+
     and hence clearly manifest that this chunk is about the testee.
 
 - The frequent necessity of introduction of temporary directory and / or temporary file usually leads to the usage of
@@ -70,9 +74,9 @@ providing the methods / funtions **tempdir** and **tempfile**.
 
     This, however, can significantly be simplified (and the size of test file can be reduced) requesting such introduction
     via the options supported by **Test::Expander**:
-```perl
+
         use Test::Expander -tempdir => {}, -tempfile => {};
-```
+
 - Another fuctionality frequently used in tests relates to the work with files and directories:
 reading, writing, creation, etc. Because almost all features required in such cases are provided by
 [Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module is also exported from
@@ -151,24 +155,24 @@ The known exceptions are:
 
 - When another module is used, which in turn is based on [Test::Builder](https://metacpan.org/pod/Test::Builder) e.g.
 [Test::Output](https://metacpan.org/pod/Test::Output):
-```perl
+
         use Test::Output;
         use Test::Expander;
-```
+
 - When some actions performed on the module level (e.g. determination of constants)
 rely upon results of other actions (e.g. mocking of built-ins).
 
     To explain this let us assume that your test file should mock the built-in **close**
     to verify if the testee properly reacts both on its success and failure.
     For this purpose a reasonable implementation might look as follows:
-```perl
+
         my $closeSuccess = 1;
         BEGIN {
           *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close($_[0]) : 0 }
         }
 
         use Test::Expander;
-```
+
 The automated recognition of name of class / module to be tested can only work
 if the test file is located in the corresponding subdirectory.
 For instance, if the class / module to be tested is _Foo::Bar::Baz_, then the folder with test files
@@ -176,9 +180,9 @@ related to this class / module should be **t/**_Foo_**/**_Bar_**/**_Baz_ or **xt
 (the name of the top-level directory in this relative name - **t**, or **xt**, or **my\_test** is not important) -
 otherwise the module name cannot be put into the exported variable **$CLASS** and, if you want to use this variable,
 should be supplied as the value of **-target**:
-```perl
+
     use Test::Expander -target => 'Foo::Bar::Baz';
-```
+
 This recognition can explicitly be deactivated if the value of **-target** is **undef**, so that no class / module
 will be loaded and, correspondingly, the variables **$CLASS**, **$METHOD**, and **$METHOD\_REF** will not be exported.
 
@@ -190,13 +194,13 @@ to be tested and its reference, correspondingly, otherwise both variables are ne
 
 Also in this case evaluation and export of the variables **$METHOD** and **$METHOD\_REF** can be prevented
 by passing of **undef** as value of the option **-method**:
-```perl
+
     use Test::Expander -target => undef;
-```
+
 Finally, **Test::Expander** supports testing inside of a clean environment containing only some clearly
 specified environment variables required for the particular test.
 Names and values of these environment variables should be configured in files,
-the names of which are identical with paths to single class / module levels or the method / subroutine to be tested,
+which names are identical with paths to single class / module levels or the method / subroutine to be tested,
 and the extension is always **.env**.
 For instance, if the test file name is **t/Foo/Bar/Baz/myMethod.t**, the following approach is applied:
 
@@ -220,16 +224,45 @@ An environment configuration file (**.env** file) is a line-based text file.
 Its content is interpreted as follows:
 
 - if such files don't exist, the **%ENV** hash remains unchanged;
-- otherwise, if at least one of such files exists, those elements of **%ENV** are kept,
+- otherwise, if at least one of such files exists, those elements of the **%ENV** hash are kept,
 which names are equal to names found in lines of **.env** file without values.
-All remaining elements of the **%ENV** gets emptied (without localization) and
+All remaining elements of the **%ENV** hash gets emptied (without localization) and
     - lines not matching the RegEx **/^\\w+\\s\*(?:=\\s\*\\S|$)?/** (some alphanumeric characters representing a name of
     environment variable, optional blanks, optionally followed by the equal sign, again optional blanks,
     and at least one non-blank character representing the first character of environment variable value) are skipped;
     - in all other lines the value of the environment variable is everything from the first non-blank
     character after the equal sign until end of the line;
     if this value is omitted, the corresponding environment variable remains unchanged as it originally was in the **%ENV**
-    (if it existed there, of course);
+    hash (if it existed there, of course);
+    - during the evaluation of current line environment variables defined in above lines of the same file can be used.
+    For example if such **.env** file contains
+
+            VAR1 = 'ABC'
+            VAR2 = lc( $ENV{ VAR1 } )
+
+        and neither **VAR1** nor **VAR2** will be overwritten during the evaluation of subsequent lines in the same or other
+        **.env** files, the **%ENV** hash will contain at least the following entries:
+
+            VAR1 => 'ABC'
+            VAR2 => 'abc'
+
+    - during the evaluation of current line also environment variables defined in a higher-level **.env** file can be used.
+    For example if **t/Foo/Bar/Baz.env** contains
+
+            VAR0 = 'XYZ '
+
+        and **t/Foo/Bar/Baz/myMethod.env** contains
+
+            VAR1 = 'ABC'
+            VAR2 = lc( $ENV{ VAR0 } . $ENV{ VAR1 } )
+
+        and neither **VAR0**, nor **VAR1**, nor **VAR2** will be overwritten during the evaluation of subsequent lines in the same
+        or other **.env** files, the **%ENV** hash will contain at least the following entries:
+
+            VAR0 => 'XYZ '
+            VAR1 => 'ABC'
+            VAR2 => 'xyz abc'
+
     - the value of the environment variable (if provided) is evaluated by the
     [string eval](https://perldoc.perl.org/functions/eval) so that
         - constant values must be quoted;

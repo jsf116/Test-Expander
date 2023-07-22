@@ -68,6 +68,7 @@ sub import {
 
   _export_most_symbols( $options, $test_file );
   _set_env( $options->{ -target }, $test_file );
+  _mock_builtins( $options ) if defined( $CLASS ) && exists( $options->{ -builtins } );
 
   Test2::V0->import( %$options );
 
@@ -210,6 +211,19 @@ sub _export_symbols {
   return;
 }
 
+sub _mock_builtins {
+  my ( $options ) = @_;
+
+  while ( my ( $sub_name, $sub_ref ) = each( %{ $options->{ -builtins } } ) ) {
+    my $sub_full_name = $CLASS . '::' . $sub_name;
+    no strict qw( refs );
+    *${ sub_full_name } = $sub_ref;
+  }
+  delete( $options->{ -builtins } );
+
+  return;
+}
+
 sub _new_test_message {
   my ( $class ) = @_;
 
@@ -222,6 +236,14 @@ sub _parse_options {
   my $options = {};
   while ( my $option_name = shift( @$exports ) ) {
     given ( $option_name ) {
+      when ( '-builtins' ) {
+        my $option_value = shift( @$exports );
+        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+        while ( my ( $sub_name, $sub_ref ) = each( %$option_value ) ) {
+          $DIE->( $FMT_INVALID_VALUE, $option_name . "->{ $sub_name }", $sub_ref ) if ref( $sub_ref ) ne 'CODE';
+        }
+        $options->{ -builtins } = $option_value;
+      }
       when ( '-lib' ) {
         my $option_value = shift( @$exports );
         $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'ARRAY';
@@ -267,14 +289,28 @@ sub _read_env_file {
   while ( my ( $index, $line ) = each( @lines ) ) {
                                                             ## no critic (ProhibitUnusedCapture)
     next unless $line =~ /^ (?<name> \w+) \s* (?: = \s* (?<value> \S .*) | $ )/x;
+    my ( $name, $value ) = @+{ qw( name value ) };
     if ( exists( $+{ value } ) ) {
-      $env{ $+{ name } } = eval( $+{ value } );
-      $DIE->( $FMT_INVALID_ENV_ENTRY, $index, $env_file, $line, $@ ) if $@;
-      $NOTE->( $FMT_SET_ENV_VAR, $+{ name }, $env{ $+{ name } }, $env_file );
+      my $stricture = q{
+        use strict;
+        use warnings
+          FATAL    => qw( all ),
+          NONFATAL => qw( deprecated exec internal malloc newline once portable redefine recursion uninitialized );
+      };
+      $env{ $name } = eval {
+        eval( $stricture . '$value' );
+        die( $@ ) if $@;                                    # uncoverable branch true
+        $value = eval( $stricture . $value );
+        die( $@ ) if $@;
+        $value;
+      };
+      $DIE->( $FMT_INVALID_ENV_ENTRY, $index, $env_file, $line, $@ =~ s/\n//gr =~ s/ at \(eval .+//ir ) if $@;
+      $NOTE->( $FMT_SET_ENV_VAR, $name, $env{ $name }, $env_file );
+      $ENV{ $name } = $env{ $name };
     }
     elsif ( exists( $ENV{ $+{ name } } ) ) {
-      $env{ $+{ name } } = $ENV{ $+{ name } };
-      $NOTE->( $FMT_KEEP_ENV_VAR, $+{ name }, $ENV{ $+{ name } } );
+      $env{ $name } = $ENV{ $name };
+      $NOTE->( $FMT_KEEP_ENV_VAR, $name, $ENV{ $name } );
     }
   }
 

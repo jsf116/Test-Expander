@@ -11,6 +11,10 @@ B<Test::Expander> - Expansion of test functionalities that appear to be frequent
   use Test::Expander;
 
   # Tries to automatically determine, which class / module and method / subroutine are to be tested,
+  # creates both a temporary directory and a temporary file preventing their removal after execution:
+  use Test::Expander -tempdir => { CLEANUP => 0 }, -tempfile => { UNLINK => 0 };
+
+  # Tries to automatically determine, which class / module and method / subroutine are to be tested,
   # creates neither a temporary directory, nor a temporary file,
   # passes the option '-srand' to Test2::V0 changing the random seed to the current time in seconds:
   use Test::Expander -srand => time;
@@ -248,7 +252,7 @@ by passing of B<undef> as value of the option B<-method>:
 Finally, B<Test::Expander> supports testing inside of a clean environment containing only some clearly
 specified environment variables required for the particular test.
 Names and values of these environment variables should be configured in files,
-the names of which are identical with paths to single class / module levels or the method / subroutine to be tested,
+which names are identical with paths to single class / module levels or the method / subroutine to be tested,
 and the extension is always B<.env>.
 For instance, if the test file name is B<t/Foo/Bar/Baz/myMethod.t>, the following approach is applied:
 
@@ -294,9 +298,9 @@ if such files don't exist, the B<%ENV> hash remains unchanged;
 
 =item
 
-otherwise, if at least one of such files exists, those elements of B<%ENV> are kept,
+otherwise, if at least one of such files exists, those elements of the B<%ENV> hash are kept,
 which names are equal to names found in lines of B<.env> file without values.
-All remaining elements of the B<%ENV> gets emptied (without localization) and
+All remaining elements of the B<%ENV> hash gets emptied (without localization) and
 
 =over 2
 
@@ -311,7 +315,40 @@ and at least one non-blank character representing the first character of environ
 in all other lines the value of the environment variable is everything from the first non-blank
 character after the equal sign until end of the line;
 if this value is omitted, the corresponding environment variable remains unchanged as it originally was in the B<%ENV>
-(if it existed there, of course);
+hash (if it existed there, of course);
+
+=item
+
+during the evaluation of current line environment variables defined in above lines of the same file can be used.
+For example if such B<.env> file contains
+
+  VAR1 = 'ABC'
+  VAR2 = lc( $ENV{ VAR1 } )
+
+and neither B<VAR1> nor B<VAR2> will be overwritten during the evaluation of subsequent lines in the same or other
+B<.env> files, the B<%ENV> hash will contain at least the following entries:
+
+  VAR1 => 'ABC'
+  VAR2 => 'abc'
+
+=item
+
+during the evaluation of current line also environment variables defined in a higher-level B<.env> file can be used.
+For example if B<t/Foo/Bar/Baz.env> contains
+
+  VAR0 = 'XYZ '
+
+and B<t/Foo/Bar/Baz/myMethod.env> contains
+
+  VAR1 = 'ABC'
+  VAR2 = lc( $ENV{ VAR0 } . $ENV{ VAR1 } )
+
+and neither B<VAR0>, nor B<VAR1>, nor B<VAR2> will be overwritten during the evaluation of subsequent lines in the same
+or other B<.env> files, the B<%ENV> hash will contain at least the following entries:
+
+  VAR0 => 'XYZ '
+  VAR1 => 'ABC'
+  VAR2 => 'xyz abc'
 
 =item
 
