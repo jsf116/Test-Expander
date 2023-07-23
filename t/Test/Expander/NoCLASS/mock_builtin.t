@@ -5,6 +5,9 @@ use warnings
 
 use Test::Builder::Tester tests => 1;
 
+use FindBin;
+use lib "$FindBin::Bin/../../../..";
+
 my $title = "mock 'close'";
 use Test::Expander
   -builtins => { close => sub { $title } },

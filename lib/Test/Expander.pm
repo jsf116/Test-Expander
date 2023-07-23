@@ -2,15 +2,12 @@
 package Test::Expander;
 
 # The versioning is conform with https://semver.org
-our $VERSION = '2.0.4';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.1.1';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
-  FATAL      => qw( all ),
-  NONFATAL   => qw( deprecated exec internal malloc newline portable recursion );
-use feature     qw( switch );
-no if ( $] >= 5.018 ),
-    warnings => qw( experimental );
+  FATAL    => qw( all ),
+  NONFATAL => qw( deprecated exec internal malloc newline portable recursion );
 
 use Const::Fast;
 use File::chdir;
@@ -235,46 +232,38 @@ sub _parse_options {
 
   my $options = {};
   while ( my $option_name = shift( @$exports ) ) {
-    given ( $option_name ) {
-      when ( '-builtins' ) {
-        my $option_value = shift( @$exports );
-        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
-        while ( my ( $sub_name, $sub_ref ) = each( %$option_value ) ) {
-          $DIE->( $FMT_INVALID_VALUE, $option_name . "->{ $sub_name }", $sub_ref ) if ref( $sub_ref ) ne 'CODE';
-        }
-        $options->{ -builtins } = $option_value;
+    $DIE->( $FMT_UNKNOWN_OPTION, $option_name, shift( @$exports ) // '' ) if $option_name !~ /^-\w/;
+
+    my $option_value = shift( @$exports );
+    if ( $option_name eq '-builtins' ) {                    ## no critic (ProhibitCascadingIfElse)
+      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+      while ( my ( $sub_name, $sub_ref ) = each( %$option_value ) ) {
+        $DIE->( $FMT_INVALID_VALUE, $option_name . "->{ $sub_name }", $sub_ref ) if ref( $sub_ref ) ne 'CODE';
       }
-      when ( '-lib' ) {
-        my $option_value = shift( @$exports );
-        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'ARRAY';
-        $options->{ -lib } = $option_value;
-      }
-      when ( '-method' ) {
-        my $option_value = shift( @$exports );
-        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value );
-        $METHOD = $options->{ -method } = $option_value;
-      }
-      when ( '-target' ) {
-        my $option_value = shift( @$exports );              # Do not load module only if its name is undef
-        $options->{ -target } = $option_value if defined( $option_value );
-      }
-      when ( '-tempdir' ) {
-        my $option_value = shift( @$exports );
-        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
-        $TEMP_DIR = tempdir( CLEANUP => 1, %$option_value );
-      }
-      when ( '-tempfile' ) {
-        my $option_value = shift( @$exports );
-        $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
-        my $file_handle;
-        ( $file_handle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$option_value );
-      }
-      when ( /^-\w/ ) {
-        $options->{ $option_name } = shift( @$exports );
-      }
-      default {
-        $DIE->( $FMT_UNKNOWN_OPTION, $option_name, shift( @$exports ) // '' );
-      }
+      $options->{ $option_name } = $option_value;
+    }
+    elsif ( $option_name eq '-lib' ) {
+      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'ARRAY';
+      $options->{ $option_name } = $option_value;
+    }
+    elsif ( $option_name eq '-method' ) {
+      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value );
+      $METHOD = $options->{ $option_name } = $option_value;
+    }
+    elsif ( $option_name eq '-target' ) {                 # Do not load module only if its name is undef
+      $options->{ $option_name } = $option_value if defined( $option_value );
+    }
+    elsif ( $option_name eq '-tempdir' ) {
+      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+      $TEMP_DIR = tempdir( CLEANUP => 1, %$option_value );
+    }
+    elsif ( $option_name eq '-tempfile' ) {
+      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+      my $file_handle;
+      ( $file_handle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$option_value );
+    }
+    else {
+      $options->{ $option_name } = $option_value;
     }
   }
 

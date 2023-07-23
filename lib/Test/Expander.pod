@@ -43,6 +43,11 @@ B<Test::Expander> - Expansion of test functionalities that appear to be frequent
     ],
     -tempdir => {};
 
+  # Override the builtin 'close' in the name space of explicitly supplied class / module to be tested:
+  use Test::Expander
+    -builtins => { close => sub { CORE::close( shift ); 'successfully closed' } },
+    -target   => 'My::Class';
+
 =head1 DESCRIPTION
 
 The primary objective of B<Test::Expander> is to provide additional convenience while testing based on
@@ -138,6 +143,12 @@ Options specific for this module only are always expected to have values and the
 
 =item
 
+B<-builtins> - override builtins in the name space of class / module to be tested.
+The expected value is a hash reference, where keys are the names of builtins and
+the values are code references overriding default behavior.
+
+=item
+
 B<-lib> - prepend directory list used by the Perl interpreter for search of modules to be loaded
 (i.e. the B<@INC> array) with values supplied in form of array reference.
 Each element of this array is evaluated using L<string eval|https://perldoc.perl.org/functions/eval> so that
@@ -212,13 +223,15 @@ L<Test::Output|https://metacpan.org/pod/Test::Output>:
 When some actions performed on the module level (e.g. determination of constants)
 rely upon results of other actions (e.g. mocking of built-ins).
 
-To explain this let us assume that your test file should mock the built-in B<close>
+To explain this let us assume that your test file should globally mock the built-in B<close>
+(if this is only required in the name space of class / module to be tested,
+the option **builtin** should be used instead!)
 to verify if the testee properly reacts both on its success and failure.
 For this purpose a reasonable implementation might look as follows:
 
   my $closeSuccess = 1;
   BEGIN {
-    *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close($_[0]) : 0 }
+    *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close( $_[ 0 ] ) : 0 }
   }
 
   use Test::Expander;
@@ -319,7 +332,13 @@ hash (if it existed there, of course);
 
 =item
 
-during the evaluation of current line environment variables defined in above lines of the same file can be used.
+the cascading definition of environment variables can be used, which means that
+
+=over 2
+
+=item
+
+during the evaluation of current line environment variables defined in the same file above can be applied.
 For example if such B<.env> file contains
 
   VAR1 = 'ABC'
@@ -349,6 +368,8 @@ or other B<.env> files, the B<%ENV> hash will contain at least the following ent
   VAR0 => 'XYZ '
   VAR1 => 'ABC'
   VAR2 => 'xyz abc'
+
+=back
 
 =item
 

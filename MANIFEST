@@ -21,6 +21,8 @@ t/Test/Expander/import.t
 t/Test/Expander/is_deeply.t
 t/Test/Expander/lives_ok.t
 t/Test/Expander/new_ok.t
+t/Test/Expander/NoCLASS/mock_builtin.t
+t/Test/Expander/NoCLASS/MyModule.pm
 t/Test/Expander/NoCLASS/NoMETHOD.t
 t/Test/Expander/NoCLASS/NoMETHOD_only.t
 t/Test/Expander/require_ok.t
