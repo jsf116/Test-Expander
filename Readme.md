@@ -42,8 +42,9 @@
       -tempdir => {};
 
     # Override the builtin 'close' in the name space of explicitly supplied class / module to be tested:
+    my $close_success;
     use Test::Expander
-      -builtins => { close => sub { CORE::close( shift ); 'successfully closed' } },
+      -builtins => { close => sub { $close_success ? CORE::close( shift ) : 0 } },
       -target   => 'My::Class';
 ```
 # DESCRIPTION
@@ -64,13 +65,13 @@ This, of course, can be stored in additional variables declared somewhere at the
     a single change of path and / or base name of the corresponding test file.
 
     An additional benefit of suggested approach is a better readability of tests, where chunks like
-```perl
+    ```perl
         Foo::Bar->baz( $arg0, $arg1 )
-```
+    ```
     now look like
-```perl
+    ```perl
         $CLASS->$METHOD( $arg0, $arg1 )
-```
+    ```
     and hence clearly manifest that this chunk is about the testee.
 
 - The frequent necessity of introduction of temporary directory and / or temporary file usually leads to the usage of
@@ -79,9 +80,9 @@ providing the methods / funtions **tempdir** and **tempfile**.
 
     This, however, can significantly be simplified (and the size of test file can be reduced) requesting such introduction
     via the options supported by **Test::Expander**:
-```perl
+    ```perl
         use Test::Expander -tempdir => {}, -tempfile => {};
-```
+    ```
 - Another fuctionality frequently used in tests relates to the work with files and directories:
 reading, writing, creation, etc. Because almost all features required in such cases are provided by
 [Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module is also exported from
@@ -157,32 +158,6 @@ The following options are accepted:
 
 - If an argument cannot be recognized as an option, an exception is raised.
 
-**Test::Expander** is recommended to be the very first module in your test file.
-
-The known exceptions are:
-
-- When another module is used, which in turn is based on [Test::Builder](https://metacpan.org/pod/Test::Builder) e.g.
-[Test::Output](https://metacpan.org/pod/Test::Output):
-```perl
-        use Test::Output;
-        use Test::Expander;
-```
-- When some actions performed on the module level (e.g. determination of constants)
-rely upon results of other actions (e.g. mocking of built-ins).
-
-    To explain this let us assume that your test file should globally mock the built-in **close**
-    (if this is only required in the name space of class / module to be tested,
-    the option **builtin** should be used instead!)
-    to verify if the testee properly reacts both on its success and failure.
-    For this purpose a reasonable implementation might look as follows:
-```perl
-        my $closeSuccess = 1;
-        BEGIN {
-          *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close( $_[ 0 ] ) : 0 }
-        }
-
-        use Test::Expander;
-```
 The automated recognition of name of class / module to be tested can only work
 if the test file is located in the corresponding subdirectory.
 For instance, if the class / module to be tested is _Foo::Bar::Baz_, then the folder with test files
@@ -348,6 +323,34 @@ If, however, you need the test file name in a test submodule or in a **.env** fi
 All variables mentioned above are read-only after their export.
 In this case they are logged to STDOUT using [note](https://metacpan.org/pod/Test2::Tools::Basic#DIAGNOSTICS).
 
+# CAVEATS
+
+**Test::Expander** is recommended to be the very first module in your test file.
+
+The known exceptions are:
+
+- When another module is used, which in turn is based on [Test::Builder](https://metacpan.org/pod/Test::Builder) e.g.
+[Test::Output](https://metacpan.org/pod/Test::Output):
+    ```perl
+        use Test::Output;
+        use Test::Expander;
+    ```
+- When some actions performed on the module level (e.g. determination of constants)
+rely upon results of other actions (e.g. mocking of built-ins).
+
+    To explain this let us assume that your test file should globally mock the built-in **close**
+    (if this is only required in the name space of class / module to be tested,
+    the option \*\*builtin\*\* should be used instead!)
+    to verify if the testee properly reacts both on its success and failure.
+    For this purpose a reasonable implementation might look as follows:
+    ```perl
+        my $close_success;
+        BEGIN {
+          *CORE::GLOBAL::close = sub (*) { $close_success ? CORE::close( shift ) : 0 }
+        }
+
+        use Test::Expander;
+    ```
 # AUTHOR
 
 Jurij Fajnberg, &lt;fajnbergj at gmail.com>
