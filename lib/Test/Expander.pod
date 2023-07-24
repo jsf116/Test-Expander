@@ -44,8 +44,9 @@ B<Test::Expander> - Expansion of test functionalities that appear to be frequent
     -tempdir => {};
 
   # Override the builtin 'close' in the name space of explicitly supplied class / module to be tested:
+  my $close_success;
   use Test::Expander
-    -builtins => { close => sub { CORE::close( shift ); 'successfully closed' } },
+    -builtins => { close => sub { $close_success ? CORE::close( shift ) : 0 } },
     -target   => 'My::Class';
 
 =head1 DESCRIPTION
@@ -201,40 +202,6 @@ Options without values are not supported; in case of their passing an exception 
 =item
 
 If an argument cannot be recognized as an option, an exception is raised.
-
-=back
-
-B<Test::Expander> is recommended to be the very first module in your test file.
-
-The known exceptions are:
-
-=over 2
-
-=item
-
-When another module is used, which in turn is based on L<Test::Builder|https://metacpan.org/pod/Test::Builder> e.g.
-L<Test::Output|https://metacpan.org/pod/Test::Output>:
-
-  use Test::Output;
-  use Test::Expander;
-
-=item
-
-When some actions performed on the module level (e.g. determination of constants)
-rely upon results of other actions (e.g. mocking of built-ins).
-
-To explain this let us assume that your test file should globally mock the built-in B<close>
-(if this is only required in the name space of class / module to be tested,
-the option **builtin** should be used instead!)
-to verify if the testee properly reacts both on its success and failure.
-For this purpose a reasonable implementation might look as follows:
-
-  my $closeSuccess = 1;
-  BEGIN {
-    *CORE::GLOBAL::close = sub (*) { return $closeSuccess ? CORE::close( $_[ 0 ] ) : 0 }
-  }
-
-  use Test::Expander;
 
 =back
 
@@ -569,6 +536,42 @@ L<__FILE__|https://perldoc.perl.org/functions/__FILE__> can no longer be applied
 
 All variables mentioned above are read-only after their export.
 In this case they are logged to STDOUT using L<note|https://metacpan.org/pod/Test2::Tools::Basic#DIAGNOSTICS>.
+
+=head1 CAVEATS
+
+B<Test::Expander> is recommended to be the very first module in your test file.
+
+The known exceptions are:
+
+=over 2
+
+=item
+
+When another module is used, which in turn is based on L<Test::Builder|https://metacpan.org/pod/Test::Builder> e.g.
+L<Test::Output|https://metacpan.org/pod/Test::Output>:
+
+  use Test::Output;
+  use Test::Expander;
+
+=item
+
+When some actions performed on the module level (e.g. determination of constants)
+rely upon results of other actions (e.g. mocking of built-ins).
+
+To explain this let us assume that your test file should globally mock the built-in B<close>
+(if this is only required in the name space of class / module to be tested,
+the option **builtin** should be used instead!)
+to verify if the testee properly reacts both on its success and failure.
+For this purpose a reasonable implementation might look as follows:
+
+  my $close_success;
+  BEGIN {
+    *CORE::GLOBAL::close = sub (*) { $close_success ? CORE::close( shift ) : 0 }
+  }
+
+  use Test::Expander;
+
+=back
 
 =head1 AUTHOR
 

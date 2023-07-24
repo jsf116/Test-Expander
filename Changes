@@ -1,5 +1,8 @@
 Changelog for Test-Expander
 
+2.1.2 2023-07-24
+    - Improve documentation by introduction of CAVEATS topic.
+
 2.1.1 2023-07-23
     - Remove deprecated "given-when" statement.
     - Use "FindBin" module instead of ".proverc" for testers avoiding "prove".
