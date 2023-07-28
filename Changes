@@ -1,5 +1,11 @@
 Changelog for Test-Expander
 
+2.1.4 2023-07-28
+    - Skip assignment of environment variables in case of undefined value.
+
+2.1.3 2023-07-27
+    - Fix implementation of '-target => undef'.
+
 2.1.2 2023-07-24
     - Improve documentation by introduction of CAVEATS topic.
 

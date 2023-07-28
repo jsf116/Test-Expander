@@ -2,7 +2,7 @@
 package Test::Expander;
 
 # The versioning is conform with https://semver.org
-our $VERSION = '2.1.2';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.1.4';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
@@ -23,7 +23,7 @@ use Test::Expander::Constants qw(
   $DIE $FALSE
   $FMT_INVALID_DIRECTORY $FMT_INVALID_ENV_ENTRY $FMT_INVALID_VALUE $FMT_KEEP_ENV_VAR $FMT_NEW_FAILED
   $FMT_NEW_SUCCEEDED $FMT_REPLACEMENT $FMT_REQUIRE_DESCRIPTION $FMT_REQUIRE_IMPLEMENTATION $FMT_SEARCH_PATTERN
-  $FMT_SET_ENV_VAR $FMT_SET_TO $FMT_UNKNOWN_OPTION $FMT_USE_DESCRIPTION $FMT_USE_IMPLEMENTATION
+  $FMT_SET_ENV_VAR $FMT_SET_TO $FMT_SKIP_ENV_VAR $FMT_UNKNOWN_OPTION $FMT_USE_DESCRIPTION $FMT_USE_IMPLEMENTATION
   $MSG_ERROR_WAS $MSG_UNEXPECTED_EXCEPTION
   $NOTE
   $REGEX_ANY_EXTENSION $REGEX_CLASS_HIERARCHY_LEVEL $REGEX_TOP_DIR_IN_PATH $REGEX_VERSION_NUMBER
@@ -163,7 +163,12 @@ sub _determine_testee {
     my $testee        = path( $test_file )->relative( $test_root )->parent;
     $options->{ -target } = $testee =~ s{/}{::}gr if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
   }
-  $CLASS = $options->{ -target } if exists( $options->{ -target } );
+  if ( defined( $options->{ -target } ) ) {
+    $CLASS = $options->{ -target };
+  }
+  else {
+    delete( $options->{ -target } );
+  }
 
   return $options;
 }
@@ -250,8 +255,8 @@ sub _parse_options {
       $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value );
       $METHOD = $options->{ $option_name } = $option_value;
     }
-    elsif ( $option_name eq '-target' ) {                 # Do not load module only if its name is undef
-      $options->{ $option_name } = $option_value if defined( $option_value );
+    elsif ( $option_name eq '-target' ) {
+      $options->{ $option_name } = $option_value;
     }
     elsif ( $option_name eq '-tempdir' ) {
       $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
@@ -286,7 +291,7 @@ sub _read_env_file {
           FATAL    => qw( all ),
           NONFATAL => qw( deprecated exec internal malloc newline once portable redefine recursion uninitialized );
       };
-      $env{ $name } = eval {
+      $value = eval {
         eval( $stricture . '$value' );
         die( $@ ) if $@;                                    # uncoverable branch true
         $value = eval( $stricture . $value );
@@ -294,12 +299,17 @@ sub _read_env_file {
         $value;
       };
       $DIE->( $FMT_INVALID_ENV_ENTRY, $index, $env_file, $line, $@ =~ s/\n//gr =~ s/ at \(eval .+//ir ) if $@;
-      $NOTE->( $FMT_SET_ENV_VAR, $name, $env{ $name }, $env_file );
-      $ENV{ $name } = $env{ $name };
+      if ( defined( $value ) ) {
+        $NOTE->( $FMT_SET_ENV_VAR, $name, $value, $env_file );
+        $ENV{ $name } = $env{ $name } = $value;
+      }
+      else {
+        $NOTE->( $FMT_SKIP_ENV_VAR, $name, $env_file );
+      }
     }
     elsif ( exists( $ENV{ $+{ name } } ) ) {
       $env{ $name } = $ENV{ $name };
-      $NOTE->( $FMT_KEEP_ENV_VAR, $name, $ENV{ $name } );
+      $NOTE->( $FMT_KEEP_ENV_VAR, $name, $ENV{ $name }, $env_file );
     }
   }
 

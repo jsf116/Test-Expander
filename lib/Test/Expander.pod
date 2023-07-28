@@ -36,6 +36,7 @@ B<Test::Expander> - Expansion of test functionalities that appear to be frequent
   # does not create temporary file, creates a temporary directory and
   # adds directories 'dir0' and 'dir1' located therein on top of the directory list used by the Perl interpreter
   # for search of modules to be loaded. In other words, "unshifts" these directories to the @INC array:
+  # PLEASE CONSIDER THE SINGLE QUOTES APPLIED BELOW!
   use Test::Expander
     -lib => [
       'path( $TEMP_DIR )->child( qw( dir0 ) )->stringify',
@@ -153,7 +154,8 @@ the values are code references overriding default behavior.
 B<-lib> - prepend directory list used by the Perl interpreter for search of modules to be loaded
 (i.e. the B<@INC> array) with values supplied in form of array reference.
 Each element of this array is evaluated using L<string eval|https://perldoc.perl.org/functions/eval> so that
-expression evaluated to strings are supported.
+any valid expression evaluated to string is supported if it is based on modules used by B<Test::Expander> or
+any module loaded before.
 
 Among other things this provides a possibility to temporary expand the module search path by directories located
 in the temporary directory if the latter is defined with the option B<-tempdir> (see below).
@@ -539,13 +541,17 @@ In this case they are logged to STDOUT using L<note|https://metacpan.org/pod/Tes
 
 =head1 CAVEATS
 
+=over 2
+
+=item
+
 B<Test::Expander> is recommended to be the very first module in your test file.
 
 The known exceptions are:
 
 =over 2
 
-=item
+=item 1
 
 When another module is used, which in turn is based on L<Test::Builder|https://metacpan.org/pod/Test::Builder> e.g.
 L<Test::Output|https://metacpan.org/pod/Test::Output>:
@@ -553,14 +559,14 @@ L<Test::Output|https://metacpan.org/pod/Test::Output>:
   use Test::Output;
   use Test::Expander;
 
-=item
+=item 2
 
 When some actions performed on the module level (e.g. determination of constants)
 rely upon results of other actions (e.g. mocking of built-ins).
 
 To explain this let us assume that your test file should globally mock the built-in B<close>
 (if this is only required in the name space of class / module to be tested,
-the option **builtin** should be used instead!)
+the option B<-builtin> should be used instead!)
 to verify if the testee properly reacts both on its success and failure.
 For this purpose a reasonable implementation might look as follows:
 
@@ -570,6 +576,20 @@ For this purpose a reasonable implementation might look as follows:
   }
 
   use Test::Expander;
+
+=back
+
+=item
+
+Array elements of the value supplied along with the option B<-lib> are evaluated using
+L<string eval|https://perldoc.perl.org/functions/eval> so that constant strings would need duplicated quotes e.g.
+
+  use Test::Expander -lib => [ q('my_test_lib') ];
+
+=item
+
+If the value to be assigned to an environment variable after evaluation of an B<.env> file is undefined,
+such assignment is skipped.
 
 =back
 

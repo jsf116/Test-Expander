@@ -1,4 +1,4 @@
-use v5.14;
+use strict;
 use warnings
   FATAL    => qw(all),
   NONFATAL => qw(deprecated exec internal malloc newline portable recursion);

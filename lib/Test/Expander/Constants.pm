@@ -1,6 +1,6 @@
 package Test::Expander::Constants;
 
-our $VERSION = '2.1.2';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.1.4';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
@@ -25,7 +25,7 @@ const our $FALSE                       => 0;
 const our $FMT_INVALID_DIRECTORY       => "Invalid directory name / expression '%s' supplied with option '-lib'%s\n";
 const our $FMT_INVALID_ENV_ENTRY       => "Erroneous line %d of '%s' containing '%s': %s\n";
 const our $FMT_INVALID_VALUE           => "Option '%s' passed along with invalid value '%s'\n";
-const our $FMT_KEEP_ENV_VAR            => "Keep environment variable '%s' containing '%s'";
+const our $FMT_KEEP_ENV_VAR            => "Keep environment variable '%s' containing '%s' because it is not reassigned in file '%s'";
 const our $FMT_NEW_FAILED              => '%s->new died.%s';
 const our $FMT_NEW_SUCCEEDED           => "An object of class '%s' isa '%s'";
 const our $FMT_REPLACEMENT             => $EXCEPTION_PREFIX . '%s line %s.';
@@ -34,6 +34,7 @@ const our $FMT_REQUIRE_IMPLEMENTATION  => 'package %s; require %s';
 const our $FMT_SEARCH_PATTERN          => $EXCEPTION_PREFIX . '.*$';
 const our $FMT_SET_ENV_VAR             => "Set environment variable '%s' to '%s' from file '%s'";
 const our $FMT_SET_TO                  => "Set %s to '%s'";
+const our $FMT_SKIP_ENV_VAR            => "Skip environment variable '%s' because its value from file '%s' is undefined";
 const our $FMT_UNKNOWN_OPTION          => "Unknown option '%s' => '%s' supplied.\n";
 const our $FMT_USE_DESCRIPTION         => 'use %s;%s';
 const our $FMT_USE_IMPLEMENTATION      => 'package %s; use %s%s; 1';
