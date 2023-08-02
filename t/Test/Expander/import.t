@@ -22,7 +22,7 @@ BEGIN {
 }
 
 use Scalar::Readonly          qw( readonly_off );
-use Test::Builder::Tester     tests => @functions + @variables + 16;
+use Test::Builder::Tester     tests => @functions + @variables + 17;
 
 use Test::Expander            -target   => 'Test::Expander',
                               -tempdir  => { CLEANUP => 1 },
@@ -118,9 +118,9 @@ readonly_off( $TEMP_FILE );
 readonly_off( $TEST_FILE );
 test_out( "ok 1 - $title" );
 {
-  my $mockImporter = mock 'Importer'  => ( override => [ import_into     => sub {} ] );
-  my $mockSelf     = mock $CLASS      => ( override => [ _export_symbols => sub {} ] );
-  my $mockTest2    = mock 'Test2::V0' => ( override => [ import          => sub {} ] );
+  my $mock_importer = mock 'Importer'  => ( override => [ import_into     => sub {} ] );
+  my $mock_test2    = mock 'Test2::V0' => ( override => [ import          => sub {} ] );
+  my $mock_this     = mock $CLASS      => ( override => [ _export_symbols => sub {} ] );
   is( $CLASS->$METHOD( -lib => [ 'path( $TEMP_DIR )->child( qw( my_root ) )->stringify' ] ), undef, $title );
 }
 test_test( $title );
@@ -209,8 +209,8 @@ test_out(
   )
 );
 {
-  my $mockImporter = mock 'Importer'  => ( override => [ import_into => sub {} ] );
-  my $mockTest2    = mock 'Test2::V0' => ( override => [ import      => sub {} ] );
+  my $mock_importer = mock 'Importer'  => ( override => [ import_into => sub {} ] );
+  my $mock_test2    = mock 'Test2::V0' => ( override => [ import      => sub {} ] );
   is( dies { $CLASS->$METHOD( -method => 'dummy', -target => undef ) }, $expected, $title );
 }
 test_test( $title );
@@ -240,8 +240,8 @@ test_out(
   )
 );
 {
-  my $mockImporter = mock 'Importer'  => ( override => [ import_into => sub {} ] );
-  my $mockTest2    = mock 'Test2::V0' => ( override => [ import      => sub {} ] );
+  my $mock_importer = mock 'Importer'  => ( override => [ import_into => sub {} ] );
+  my $mock_test2    = mock 'Test2::V0' => ( override => [ import      => sub {} ] );
   is( dies { $CLASS->import( -method => undef, -target => undef ) }, $expected, $title );
 }
 test_test( $title );
@@ -250,4 +250,29 @@ $title    = "omitted '-method', '-target' => undef (assigned method name)";
 $expected = undef;
 test_out( "ok 1 - $title" );
 is( $METHOD, $expected, $title );
+test_test( $title );
+
+$title = "test file absent (command line option '-e' simulated)";
+readonly_off( $CLASS );
+readonly_off( $METHOD );
+readonly_off( $METHOD_REF );
+readonly_off( $TEMP_DIR );
+readonly_off( $TEMP_FILE );
+readonly_off( $TEST_FILE );
+$CLASS = $METHOD = $METHOD_REF = $TEMP_DIR = $TEMP_FILE = $TEST_FILE = undef;
+test_out( "ok 1 - $title" );
+{
+  my $mock_PathTiny = mock 'Path::Tiny'     => ( override => [ exists      => sub {} ] );
+  my $mock_importer = mock 'Importer'       => ( override => [ import_into => sub {} ] );
+  my $mock_test2    = mock 'Test2::V0'      => ( override => [ import      => sub {} ] );
+  my $mock_this     = mock 'Test::Expander' => (
+    override => [
+      _export_rest_symbols => sub {},
+      _mock_builtins       => sub {},
+      _parse_options       => sub { {} },
+      _set_env             => sub {},
+    ]
+  );
+  is( Test::Expander->import( -target => undef ), undef, $title );
+}
 test_test( $title );

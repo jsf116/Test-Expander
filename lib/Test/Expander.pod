@@ -528,7 +528,7 @@ if the option B<-tempfile> is supplied.
 
 =item
 
-variable B<$TEST_FILE> containing the absolute name of the current test file.
+variable B<$TEST_FILE> containing the absolute name of the current test file (if any).
 In fact its content is identical with the content of special token
 L<__FILE__|https://perldoc.perl.org/functions/__FILE__>, but only in the test file itself!
 If, however, you need the test file name in a test submodule or in a B<.env> file belonging to this test,
@@ -590,6 +590,11 @@ L<string eval|https://perldoc.perl.org/functions/eval> so that constant strings 
 
 If the value to be assigned to an environment variable after evaluation of an B<.env> file is undefined,
 such assignment is skipped.
+
+=item
+
+If B<Test::Expander> is used in one-line mode (with the B<-e> option),
+the variable B<$TEST_FILE> is unset and not exported.
 
 =back
 

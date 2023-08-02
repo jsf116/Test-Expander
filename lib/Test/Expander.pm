@@ -2,7 +2,7 @@
 package Test::Expander;
 
 # The versioning is conform with https://semver.org
-our $VERSION = '2.1.4';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.1.5';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
@@ -186,7 +186,7 @@ sub _error {
 sub _export_most_symbols {
   my ( $options, $test_file ) = @_;
 
-  $TEST_FILE = path( $test_file )->absolute->stringify;
+  $TEST_FILE = path( $test_file )->absolute->stringify if path( $test_file )->exists;
 
   return _export_symbols( %MOST_CONSTANTS_TO_EXPORT );
 }
@@ -318,6 +318,8 @@ sub _read_env_file {
 
 sub _set_env {
   my ( $class, $test_file ) = @_;
+
+  return unless path( $test_file )->exists;
 
   my $env_found = $FALSE;
   my $new_env   = {};

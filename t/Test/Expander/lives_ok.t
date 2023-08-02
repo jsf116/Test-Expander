@@ -15,8 +15,8 @@ test_test( $title );
 
 $title = 'execution fails';
 test_out( "ok 1 - $title" );
-my $error = 'DIE TEST';
-my $mockSelf = mock $CLASS => (
+my $error     = 'DIE TEST';
+my $mock_this = mock $CLASS => (
   override => [
     diag => sub { is( $_[ 0 ], $MSG_UNEXPECTED_EXCEPTION . $error . "\n", $title ) },
     ok   => sub ($;$@) { 1 },

@@ -66,13 +66,13 @@ This, of course, can be stored in additional variables declared somewhere at the
     a single change of path and / or base name of the corresponding test file.
 
     An additional benefit of suggested approach is a better readability of tests, where chunks like
-```perl
+    ```perl
         Foo::Bar->baz( $arg0, $arg1 )
-```
+    ```
     now look like
-```perl
+    ```perl
         $CLASS->$METHOD( $arg0, $arg1 )
-```
+    ```
     and hence clearly manifest that this chunk is about the testee.
 
 - The frequent necessity of introduction of temporary directory and / or temporary file usually leads to the usage of
@@ -81,9 +81,9 @@ providing the methods / funtions **tempdir** and **tempfile**.
 
     This, however, can significantly be simplified (and the size of test file can be reduced) requesting such introduction
     via the options supported by **Test::Expander**:
-```perl
+    ```perl
         use Test::Expander -tempdir => {}, -tempfile => {};
-```
+    ```
 - Another fuctionality frequently used in tests relates to the work with files and directories:
 reading, writing, creation, etc. Because almost all features required in such cases are provided by
 [Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module is also exported from
@@ -316,7 +316,7 @@ if the method / subroutine recognition is not disable and possible,
 if the option **-tempdir** is supplied,
 - variable **$TEMP\_FILE** containing the name of a temporary file created at compile time
 if the option **-tempfile** is supplied.
-- variable **$TEST\_FILE** containing the absolute name of the current test file.
+- variable **$TEST\_FILE** containing the absolute name of the current test file (if any).
 In fact its content is identical with the content of special token
 [\_\_FILE\_\_](https://perldoc.perl.org/functions/__FILE__), but only in the test file itself!
 If, however, you need the test file name in a test submodule or in a **.env** file belonging to this test,
@@ -333,10 +333,10 @@ In this case they are logged to STDOUT using [note](https://metacpan.org/pod/Tes
 
     1. When another module is used, which in turn is based on [Test::Builder](https://metacpan.org/pod/Test::Builder) e.g.
     [Test::Output](https://metacpan.org/pod/Test::Output):
-```perl
+        ```perl
             use Test::Output;
             use Test::Expander;
-```
+        ```
     2. When some actions performed on the module level (e.g. determination of constants)
     rely upon results of other actions (e.g. mocking of built-ins).
 
@@ -345,21 +345,23 @@ In this case they are logged to STDOUT using [note](https://metacpan.org/pod/Tes
         the option **-builtin** should be used instead!)
         to verify if the testee properly reacts both on its success and failure.
         For this purpose a reasonable implementation might look as follows:
-```perl
+        ```perl
             my $close_success;
             BEGIN {
               *CORE::GLOBAL::close = sub (*) { $close_success ? CORE::close( shift ) : 0 }
             }
 
             use Test::Expander;
-```
+        ```
 - Array elements of the value supplied along with the option **-lib** are evaluated using
 [string eval](https://perldoc.perl.org/functions/eval) so that constant strings would need duplicated quotes e.g.
-```perl
+    ```perl
         use Test::Expander -lib => [ q('my_test_lib') ];
-```
+    ```
 - If the value to be assigned to an environment variable after evaluation of an **.env** file is undefined,
 such assignment is skipped.
+- If **Test::Expander** is used in one-line mode (with the **-e** option),
+the variable **$TEST\_FILE** is unset and not exported.
 
 # AUTHOR
 

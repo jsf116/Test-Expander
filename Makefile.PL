@@ -1,7 +1,7 @@
 use strict;
 use warnings
-  FATAL    => qw(all),
-  NONFATAL => qw(deprecated exec internal malloc newline portable recursion);
+  FATAL    => qw( all ),
+  NONFATAL => qw( deprecated exec internal malloc newline portable recursion );
 
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
@@ -33,7 +33,7 @@ WriteMakefile(
 	},
 	VERSION_FROM     => 'lib/Test/Expander.pm',
 	test             => {
-		TESTS                   => 't/Test/Expander/*.t t/Test/Expander/NoCLASS/*.t',
+		TESTS                   => 't/*/*/*.t t/*/*/*/*.t',
 	},
 	META_MERGE       => {
 		'meta-spec'             => { version => 2 },
