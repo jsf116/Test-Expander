@@ -9,27 +9,59 @@ use warnings
   FATAL    => qw( all ),
   NONFATAL => qw( deprecated exec internal malloc newline portable recursion );
 
+use Getopt::Long qw( GetOptions :config posix_default );
+use Test2::API   qw( context );
+use Test2::Tools::Basic;
+use Test2::Tools::Subtest;
 use Const::Fast;
 use File::chdir;
 use File::Temp       qw( tempdir tempfile );
 use Importer;
 use Path::Tiny       qw( cwd path );
 use Scalar::Readonly qw( readonly_on );
-use Test2::Tools::Basic;
 use Test2::Tools::Explain;
-use Test2::V0        qw();
 
 use Test::Expander::Constants qw(
   $DIE $FALSE
-  $FMT_INVALID_DIRECTORY $FMT_INVALID_ENV_ENTRY $FMT_INVALID_VALUE $FMT_KEEP_ENV_VAR $FMT_NEW_FAILED
-  $FMT_NEW_SUCCEEDED $FMT_REPLACEMENT $FMT_REQUIRE_DESCRIPTION $FMT_REQUIRE_IMPLEMENTATION $FMT_SEARCH_PATTERN
-  $FMT_SET_ENV_VAR $FMT_SET_TO $FMT_SKIP_ENV_VAR $FMT_UNKNOWN_OPTION $FMT_USE_DESCRIPTION $FMT_USE_IMPLEMENTATION
-  $MSG_ERROR_WAS $MSG_UNEXPECTED_EXCEPTION
+  $FMT_INVALID_DIRECTORY $FMT_INVALID_ENV_ENTRY $FMT_INVALID_VALUE $FMT_INVALID_SUBTEST_NUMBER $FMT_KEEP_ENV_VAR
+  $FMT_NEW_FAILED $FMT_NEW_SUCCEEDED $FMT_REPLACEMENT $FMT_REQUIRE_DESCRIPTION $FMT_REQUIRE_IMPLEMENTATION
+  $FMT_SEARCH_PATTERN $FMT_SET_ENV_VAR $FMT_SET_TO $FMT_SKIP_ENV_VAR $FMT_UNKNOWN_OPTION $FMT_USE_DESCRIPTION
+  $FMT_USE_IMPLEMENTATION $MSG_ERROR_WAS $MSG_UNEXPECTED_EXCEPTION
   $NOTE
   $REGEX_ANY_EXTENSION $REGEX_CLASS_HIERARCHY_LEVEL $REGEX_TOP_DIR_IN_PATH $REGEX_VERSION_NUMBER
   $TRUE
   %MOST_CONSTANTS_TO_EXPORT %REST_CONSTANTS_TO_EXPORT
 );
+
+my ( @subtest_excluded_by_name, @subtest_excluded_by_number );
+
+sub _subtest_selection {
+  my $error;
+  GetOptions(
+    'exclude_name|subtest=s' => sub {
+      ( undef, my $opt_value ) = @_;
+      push( @subtest_excluded_by_name, eval { qr/$opt_value/ } ? $opt_value : "\Q$opt_value\E" );
+    },
+    'exclude_number=s' => sub {
+      ( undef, my $opt_value ) = @_;
+      $error = sprintf( $FMT_INVALID_SUBTEST_NUMBER, $opt_value ) if $opt_value !~ m{^ \d+ (?: / \d+ )* $}x;
+      push( @subtest_excluded_by_number, $opt_value );
+    },
+  );
+  die( $error) if $error;
+
+  my $subtest_buffered_orig = \&Test2::Tools::Subtest::subtest_buffered;
+  my $subtest_streamed_orig = \&Test2::Tools::Subtest::subtest_streamed;
+  no warnings qw( redefine );
+  *Test2::Tools::Subtest::subtest_buffered = sub { _subtest_conditional( $subtest_buffered_orig, @_ ) };
+  *Test2::Tools::Subtest::subtest_streamed = sub { _subtest_conditional( $subtest_streamed_orig, @_ ) };
+
+  return;
+}
+
+BEGIN { _subtest_selection() }
+
+use Test2::V0 qw();
 
 readonly_on( $VERSION );
 
@@ -161,7 +193,7 @@ sub _determine_testee {
   unless ( exists( $options->{ -target } ) ) {              # Try to determine class / module autmatically
     my ( $test_root ) = $test_file =~ $REGEX_TOP_DIR_IN_PATH;
     my $testee        = path( $test_file )->relative( $test_root )->parent;
-    $options->{ -target } = $testee =~ s{/}{::}gr if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
+    $options->{ -target } = "$testee" =~ s{/}{::}gr if grep { path( $_ )->child( $testee . '.pm' )->is_file } @INC;
   }
   if ( defined( $options->{ -target } ) ) {
     $CLASS = $options->{ -target };
@@ -359,6 +391,26 @@ sub _set_env_hierarchically {
 
   local $CWD = $class_top_level;                            ## no critic (ProhibitLocalVars)
   return _set_env_hierarchically( $class, $env_found, $new_env );
+}
+
+sub _subtest_conditional {
+  my ( $orig_subtest, $name, @rest ) = @_;
+
+  my $ctx    = context();
+  my $number = join( '/', map { $_->count } @{ $ctx->stack } );
+  if (
+    ( grep { $name   =~ /$_/ } @subtest_excluded_by_name ) ||
+    ( grep { $number eq $_   } @subtest_excluded_by_number )
+  ) {
+    $ctx->skip( 'SKIP forced by ' . __PACKAGE__ );
+    $ctx->release;
+  }
+  else {
+    $orig_subtest->( $name, @rest );
+    $ctx->release;
+  }
+
+  return;
 }
 
 sub _use_imports {
