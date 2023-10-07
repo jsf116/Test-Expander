@@ -33,19 +33,19 @@ use Test::Expander::Constants qw(
   %MOST_CONSTANTS_TO_EXPORT %REST_CONSTANTS_TO_EXPORT
 );
 
-my ( @subtest_excluded_by_name, @subtest_excluded_by_number );
+my ( @subtest_names, @subtest_numbers );
 
 sub _subtest_selection {
   my $error;
   GetOptions(
-    'exclude_name|subtest=s' => sub {
+    'subtest_name|subtest=s' => sub {
       ( undef, my $opt_value ) = @_;
-      push( @subtest_excluded_by_name, eval { qr/$opt_value/ } ? $opt_value : "\Q$opt_value\E" );
+      push( @subtest_names, eval { qr/$opt_value/ } ? $opt_value : "\Q$opt_value\E" );
     },
-    'exclude_number=s' => sub {
+    'subtest_number=s' => sub {
       ( undef, my $opt_value ) = @_;
       $error = sprintf( $FMT_INVALID_SUBTEST_NUMBER, $opt_value ) if $opt_value !~ m{^ \d+ (?: / \d+ )* $}x;
-      push( @subtest_excluded_by_number, $opt_value );
+      push( @subtest_numbers, $opt_value );
     },
   );
   die( $error) if $error;
@@ -399,14 +399,15 @@ sub _subtest_conditional {
   my $ctx    = context();
   my $number = join( '/', map { $_->count } @{ $ctx->stack } );
   if (
-    ( grep { $name   =~ /$_/ } @subtest_excluded_by_name ) ||
-    ( grep { $number eq $_   } @subtest_excluded_by_number )
+    !@subtest_names && !@subtest_numbers      ||
+    ( grep { $name =~ /$_/ } @subtest_names ) ||
+    ( grep { /^$number/    } @subtest_numbers )
   ) {
-    $ctx->skip( 'SKIP forced by ' . __PACKAGE__ );
+    $orig_subtest->( $name, @rest );
     $ctx->release;
   }
   else {
-    $orig_subtest->( $name, @rest );
+    $ctx->skip( 'SKIP forced by ' . __PACKAGE__ );
     $ctx->release;
   }
 
