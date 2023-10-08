@@ -1,6 +1,6 @@
 package Test::Expander::Constants;
 
-our $VERSION = '2.1.5';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.2.0';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings

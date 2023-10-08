@@ -2,24 +2,24 @@
 package Test::Expander;
 
 # The versioning is conform with https://semver.org
-our $VERSION = '2.1.5';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.2.0';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
   FATAL    => qw( all ),
   NONFATAL => qw( deprecated exec internal malloc newline portable recursion );
 
-use Getopt::Long qw( GetOptions :config posix_default );
-use Test2::API   qw( context );
-use Test2::Tools::Basic;
-use Test2::Tools::Subtest;
 use Const::Fast;
 use File::chdir;
 use File::Temp       qw( tempdir tempfile );
+use Getopt::Long     qw( GetOptions :config posix_default );
 use Importer;
 use Path::Tiny       qw( cwd path );
 use Scalar::Readonly qw( readonly_on );
+use Test2::API       qw( context );
+use Test2::Tools::Basic;
 use Test2::Tools::Explain;
+use Test2::Tools::Subtest;
 
 use Test::Expander::Constants qw(
   $DIE $FALSE
@@ -407,7 +407,7 @@ sub _subtest_conditional {
     $ctx->release;
   }
   else {
-    $ctx->skip( 'SKIP forced by ' . __PACKAGE__ );
+    $ctx->skip( 'forced by ' . __PACKAGE__ );
     $ctx->release;
   }
 

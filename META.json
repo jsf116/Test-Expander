@@ -38,12 +38,15 @@
             "Exporter" : "0",
             "File::chdir" : "0",
             "File::Temp" : "0",
+            "Getopt::Long" : "0",
             "Importer" : "0",
             "PadWalker" : "0",
             "Path::Tiny" : "0.125",
             "Scalar::Readonly" : "0",
+            "Test2::Test2::API" : "0",
             "Test2::Tools::Basic" : "0",
             "Test2::Tools::Explain" : "0",
+            "Test2::Tools::Subtest" : "0",
             "Test2::V0" : "0",
             "perl" : "5.008009"
          }
@@ -58,11 +61,11 @@
    "provides" : {
       "Test::Expander" : {
          "file" : "lib/Test/Expander.pm",
-         "version" : "2.1.5"
+         "version" : "2.2.0"
       },
       "Test::Expander::Constants" : {
          "file" : "lib/Test/Expander/Constants.pm",
-         "version" : "2.1.5"
+         "version" : "2.2.0"
       }
    },
    "release_status" : "stable",
@@ -76,5 +79,5 @@
          "web" : "https://github.com/jsf116/Test-Expander"
       }
    },
-   "version" : "2.1.5"
+   "version" : "2.2.0"
 }
