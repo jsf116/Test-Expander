@@ -4,7 +4,6 @@
 
 # SYNOPSIS
 
-```perl
     # Tries to automatically determine, which class / module and method / subroutine are to be tested,
     # creates neither a temporary directory, nor a temporary file:
     use Test::Expander;
@@ -48,7 +47,6 @@
     use Test::Expander
       -builtins => { close => sub { $close_success ? CORE::close( shift ) : 0 } },
       -target   => 'My::Class';
-```
 
 # DESCRIPTION
 
@@ -69,15 +67,11 @@ This, of course, can be stored in additional variables declared somewhere at the
 
     An additional benefit of suggested approach is a better readability of tests, where chunks like
 
-    ```perl
         Foo::Bar->baz( $arg0, $arg1 )
-    ```
 
     now look like
 
-    ```perl
         $CLASS->$METHOD( $arg0, $arg1 )
-    ```
 
     and hence clearly manifest that this chunk is about the testee.
 
@@ -88,13 +82,11 @@ providing the methods / funtions **tempdir** and **tempfile**.
     This, however, can significantly be simplified (and the size of test file can be reduced) requesting such introduction
     via the options supported by **Test::Expander**:
 
-    ```perl
         use Test::Expander -tempdir => {}, -tempfile => {};
-    ```
 
 - Another fuctionality frequently used in tests relates to the work with files and directories:
 reading, writing, creation, etc. Because almost all features required in such cases are provided by
-[Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module is also exported from
+[Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module are also exported from
 **Test::Expander**.
 - To provide a really environment-independent testing, we might need a possibility to run our tests in
 a clean environment, where only explicitly mentioned environment variables are set and environment variables from the
@@ -103,13 +95,14 @@ This can also be achieved manually by manipulation of **%ENV** hash at the very 
 However, even ignoring the test code inflation, this might be (in fact - is) necessary in many tests belonging to one
 and the same module, so that a possibility to outsource the definition of test environment provided by **Test::Expander**
 makes tests smaller, more maintainable, and much more reliable.
-- Last but not least. I stole the idea of subtest selection from
+- I stole the idea of subtest selection from
 [Test::Builder::SubtestSelection](https://metacpan.org/pod/Test::Builder::SubtestSelection).
 That's why the subtest selection supported by **Test::Expander** is partially compatible with the implementation provided
 by [Test::Builder::SubtestSelection](https://metacpan.org/pod/Test::Builder::SubtestSelection).
 The term "partially" means that the option `--subtest` can only be applied to selection by name not by number.
 
-    In general the subtest selection allows the execution of required subtests identified by their names and / or by their numbers before test running.
+    In general the subtest selection allows the execution of required subtests identified by their names and / or by their
+    numbers before test running.
     At the command-line [prove](https://metacpan.org/pod/prove) runs your test script and the subtest selection is based
     on the values given to the options `--subtest_name` (alias `--subtest` - in the
     [Test::Builder::SubtestSelection](https://metacpan.org/pod/Test::Builder::SubtestSelection) style) and
@@ -118,6 +111,16 @@ The term "partially" means that the option `--subtest` can only be applied to se
 
     In both cases the options have to be supplied as arguments to the test script.
     To do so separate the arguments from prove's own arguments with the arisdottle (`::`).
+
+- Another idea inspired by other module namely by [Test::Most](https://metacpan.org/pod/Test::Most) is the idea of
+immediate stop of test file execution if one of the tests fails.
+
+    This feature can be applied both for the whole test file using the **-bail** option
+
+        use Test::Expander -bail => 1;
+
+    and for a part of it using the functions **bail\_on\_failure** and **restore\_failure\_handler** to activate and deactivate
+    this reaction, correspondingly.
 
     - Selection by name
 
@@ -128,7 +131,6 @@ The term "partially" means that the option `--subtest` can only be applied to se
 
         Assuming the test script **t/my\_test.t** contains
 
-        ```perl
             use strict;
             use warnings;
 
@@ -155,29 +157,24 @@ The term "partially" means that the option `--subtest` can only be applied to se
             subtest 'my subtest with [' => sub {
               # some test function calls
             };
-        ```
 
         Then, if the subtest **my next higher level subtest** with all embedded subtests and the subtest **my subtest with \[**
         should be executed, the corresponding [prove](https://metacpan.org/pod/prove) call
         can look like one of the following variants:
 
-        ```sh
             prove -v -b t/basic.t :: --subtest_name 'next|embedded|deepest' --subtest_name '['
             prove -v -b t/basic.t :: --subtest_name 'next' --subtest_name 'embedded' --subtest_name 'deepest' --subtest_name '['
-        ```
 
         This kind of subtest selection is pretty convenient but has a significant restriction:
         you cannot select an embedded subtest without its higher-level subtests.
         I.e. if you would try to run the following command
 
-        ```sh
             prove -v -b t/basic.t :: --subtest_name 'deepest' --subtest_name '['
-        ```
 
         the subtest **my next higher level subtest** including all embedded subtests will be skipped, so that even the subtest
         **my deepest subtest** will not be executed although this was your goal.
 
-        This restriction, however, can be avoided using the subset selection by number.
+        This restriction, however, can be avoided using the subtest selection by number.
 
     - Selection by number
 
@@ -185,7 +182,6 @@ The term "partially" means that the option `--subtest` can only be applied to se
         representing required subtest in the test file.
         Let's add to the source code of **t/my\_test.t** some comments illustrating the numbers of each subtest:
 
-        ```perl
             use strict;
             use warnings;
 
@@ -212,16 +208,13 @@ The term "partially" means that the option `--subtest` can only be applied to se
             subtest 'my subtest with [' => sub { # subtest No. 2
               # some test function calls
             };
-        ```
 
         Taking this into consideration we can combine subtest numbers starting from the highest level and separate single levels
         by the slash sign to get the unique number of any subtest we intend to execute.
         Doing so, if we only want to execute the subtests **my deepest subtest** (its number is **1/0/0**) and
         **my subtest with \[** (its number is **2**), this can easily be done with the following command:
 
-        ```sh
             prove -v -b t/basic.t :: --subtest_number '1/0/0' --subtest_number '2'
-        ```
 
 **Test::Expander** combines all advanced possibilities provided by [Test2::V0](https://metacpan.org/pod/Test2::V0)
 with some specific functions only available in the older module [Test::More](https://metacpan.org/pod/Test::More)
@@ -235,7 +228,7 @@ you do not need to specify this explicitly if the path to the test file is in ac
 of class / module to be tested i.e. file **t/Foo/Bar/baz.t** corresponds to class / module **Foo::Bar**.
 
 If such automated recognition is not intended, this can be deactivated by explicitly supplied
-undefined class / module name along with the option **-target**.
+undefined class / module name along with the option `-target`.
 
 A similar recognition is provided in regard to the method / subroutine to be tested
 (see variables **$METHOD** and **$METHOD\_REF** below) if the base name (without extension) of test file is
@@ -248,10 +241,16 @@ there is no need to hard-code this in the test itself.
 The following options are accepted:
 
 - Options specific for this module only are always expected to have values and their meaning is:
-    - **-builtins** - override builtins in the name space of class / module to be tested.
+    - **-bail** - activates immediate stop of test file execution if any test case in this file fails.
+    The expected value is boolean. Defaults to **false** i.e. the execution continues even if tests fail.
+
+        Even if activated, this behaviour can be deactivated at any point in the test file using the function
+        **restore\_failure\_handler**.
+
+    - **-builtins** - overrides builtins in the name space of class / module to be tested.
     The expected value is a hash reference, where keys are the names of builtins and
     the values are code references overriding default behavior.
-    - **-lib** - prepend directory list used by the Perl interpreter for search of modules to be loaded
+    - **-lib** - prepends directory list used by the Perl interpreter for search of modules to be loaded
     (i.e. the **@INC** array) with values supplied in form of array reference.
     Each element of this array is evaluated using [string eval](https://perldoc.perl.org/functions/eval) so that
     any valid expression evaluated to string is supported if it is based on modules used by **Test::Expander** or
@@ -263,7 +262,7 @@ The following options are accepted:
         **-lib** is interpreted as the very last option, that's why the variables defined by **Test::Expander** for export
         e.g. **$TEMP\_DIR** can be used in the expressions determining such directories (see **SYNOPSYS** above).
 
-    - **-method** - prevent any attempt to automatically determine method / subroutine to be tested.
+    - **-method** - prevents any attempt to automatically determine method / subroutine to be tested.
     If the value supplied along with this option is defined and found in the class / module to be test
     (see **-target** below), this will be considered such method / subroutine so that the variables
     **$METHOD** and **$METHOD\_REF** (see description of exported variables below) will be imported and accessible in test.
@@ -295,9 +294,7 @@ related to this class / module should be **t/**_Foo_**/**_Bar_**/**_Baz_ or **xt
 otherwise the module name cannot be put into the exported variable **$CLASS** and, if you want to use this variable,
 should be supplied as the value of **-target**:
 
-```perl
     use Test::Expander -target => 'Foo::Bar::Baz';
-```
 
 This recognition can explicitly be deactivated if the value of **-target** is **undef**, so that no class / module
 will be loaded and, correspondingly, the variables **$CLASS**, **$METHOD**, and **$METHOD\_REF** will not be exported.
@@ -311,9 +308,7 @@ to be tested and its reference, correspondingly, otherwise both variables are ne
 Also in this case evaluation and export of the variables **$METHOD** and **$METHOD\_REF** can be prevented
 by passing of **undef** as value of the option **-method**:
 
-```perl
     use Test::Expander -target => undef;
-```
 
 Finally, **Test::Expander** supports testing inside of a clean environment containing only some clearly
 specified environment variables required for the particular test.
@@ -460,40 +455,26 @@ In this case they are logged to STDOUT using [note](https://metacpan.org/pod/Tes
 
 - **Test::Expander** is recommended to be the very first module in your test file.
 
-    The known exceptions are:
-
-    1. When another module is used, which in turn is based on [Test::Builder](https://metacpan.org/pod/Test::Builder) e.g.
-    [Test::Output](https://metacpan.org/pod/Test::Output):
-
-    ```perl
-            use Test::Output;
-            use Test::Expander;
-    ```
-
-    2. When some actions performed on the module level (e.g. determination of constants)
+    The only known exception is when some actions performed on the module level (e.g. determination of constants)
     rely upon results of other actions (e.g. mocking of built-ins).
 
-        To explain this let us assume that your test file should globally mock the built-in **close**
-        (if this is only required in the name space of class / module to be tested,
-        the option **-builtin** should be used instead!)
-        to verify if the testee properly reacts both on its success and failure.
-        For this purpose a reasonable implementation might look as follows:
+    To explain this let us assume that your test file should globally mock the built-in **close**
+    (if this is only required in the name space of class / module to be tested,
+    the option **-builtin** should be used instead!)
+    to verify if the testee properly reacts both on its success and failure.
+    For this purpose a reasonable implementation might look as follows:
 
-        ```perl
-            my $close_success;
-            BEGIN {
-              *CORE::GLOBAL::close = sub (*) { $close_success ? CORE::close( shift ) : 0 }
-            }
+        my $close_success;
+        BEGIN {
+          *CORE::GLOBAL::close = sub (*) { $close_success ? CORE::close( shift ) : 0 }
+        }
 
-            use Test::Expander;
-        ```
+        use Test::Expander;
 
 - Array elements of the value supplied along with the option **-lib** are evaluated using
 [string eval](https://perldoc.perl.org/functions/eval) so that constant strings would need duplicated quotes e.g.
 
-```perl
         use Test::Expander -lib => [ q('my_test_lib') ];
-```
 
 - If the value to be assigned to an environment variable after evaluation of an **.env** file is undefined,
 such assignment is skipped.

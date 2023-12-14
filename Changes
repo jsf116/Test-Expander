@@ -1,5 +1,8 @@
 Changelog for Test-Expander
 
+2.3.0 2023-12-13
+    - Add bail on failure both as '-bail' option and as function 'bail_on_failure' accompanied by 'restore_on_failure'.
+
 2.2.0 2023-10-08
     - Stringify directory containing test file before replacement of slash with double colon avoiding blessed value
       in $CLASS in case there is no one double colon.
