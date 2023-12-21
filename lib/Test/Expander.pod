@@ -50,6 +50,9 @@ B<Test::Expander> - Expansion of test functionalities that appear to be frequent
     -builtins => { close => sub { $close_success ? CORE::close( shift ) : 0 } },
     -target   => 'My::Class';
 
+  # Activates immediate stop of test execution if any assertion fails:
+  use Test::Expander -bail => 1;
+
 =head1 DESCRIPTION
 
 The primary objective of B<Test::Expander> is to provide additional convenience while testing based on

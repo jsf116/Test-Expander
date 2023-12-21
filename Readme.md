@@ -3,7 +3,7 @@
 **Test::Expander** - Expansion of test functionalities that appear to be frequently used while testing.
 
 # SYNOPSIS
-
+```perl
     # Tries to automatically determine, which class / module and method / subroutine are to be tested,
     # creates neither a temporary directory, nor a temporary file:
     use Test::Expander;
@@ -48,6 +48,9 @@
       -builtins => { close => sub { $close_success ? CORE::close( shift ) : 0 } },
       -target   => 'My::Class';
 
+    # Activates immediate stop of test execution if any assertion fails:
+    use Test::Expander -bail => 1;
+```
 # DESCRIPTION
 
 The primary objective of **Test::Expander** is to provide additional convenience while testing based on
@@ -66,13 +69,13 @@ This, of course, can be stored in additional variables declared somewhere at the
     a single change of path and / or base name of the corresponding test file.
 
     An additional benefit of suggested approach is a better readability of tests, where chunks like
-
+    ```perl
         Foo::Bar->baz( $arg0, $arg1 )
-
+    ```
     now look like
-
+    ```perl
         $CLASS->$METHOD( $arg0, $arg1 )
-
+    ```
     and hence clearly manifest that this chunk is about the testee.
 
 - The frequent necessity of introduction of temporary directory and / or temporary file usually leads to the usage of
@@ -81,9 +84,9 @@ providing the methods / funtions **tempdir** and **tempfile**.
 
     This, however, can significantly be simplified (and the size of test file can be reduced) requesting such introduction
     via the options supported by **Test::Expander**:
-
+    ```perl
         use Test::Expander -tempdir => {}, -tempfile => {};
-
+    ```
 - Another fuctionality frequently used in tests relates to the work with files and directories:
 reading, writing, creation, etc. Because almost all features required in such cases are provided by
 [Path::Tiny](https://metacpan.org/pod/Path::Tiny), some functions of this module are also exported from
@@ -116,9 +119,9 @@ The term "partially" means that the option `--subtest` can only be applied to se
 immediate stop of test file execution if one of the tests fails.
 
     This feature can be applied both for the whole test file using the **-bail** option
-
+    ```perl
         use Test::Expander -bail => 1;
-
+    ```
     and for a part of it using the functions **bail\_on\_failure** and **restore\_failure\_handler** to activate and deactivate
     this reaction, correspondingly.
 
@@ -130,7 +133,7 @@ immediate stop of test file execution if one of the tests fails.
         the RegEx match is in any case possible.
 
         Assuming the test script **t/my\_test.t** contains
-
+        ```perl
             use strict;
             use warnings;
 
@@ -157,20 +160,20 @@ immediate stop of test file execution if one of the tests fails.
             subtest 'my subtest with [' => sub {
               # some test function calls
             };
-
+        ```
         Then, if the subtest **my next higher level subtest** with all embedded subtests and the subtest **my subtest with \[**
         should be executed, the corresponding [prove](https://metacpan.org/pod/prove) call
         can look like one of the following variants:
-
+        ```sh
             prove -v -b t/basic.t :: --subtest_name 'next|embedded|deepest' --subtest_name '['
             prove -v -b t/basic.t :: --subtest_name 'next' --subtest_name 'embedded' --subtest_name 'deepest' --subtest_name '['
-
+        ```
         This kind of subtest selection is pretty convenient but has a significant restriction:
         you cannot select an embedded subtest without its higher-level subtests.
         I.e. if you would try to run the following command
-
+        ```sh
             prove -v -b t/basic.t :: --subtest_name 'deepest' --subtest_name '['
-
+        ```
         the subtest **my next higher level subtest** including all embedded subtests will be skipped, so that even the subtest
         **my deepest subtest** will not be executed although this was your goal.
 
@@ -181,7 +184,7 @@ immediate stop of test file execution if one of the tests fails.
         The selection by number means that the value supplied along with `--subtest_number` option is the sequence of numbers
         representing required subtest in the test file.
         Let's add to the source code of **t/my\_test.t** some comments illustrating the numbers of each subtest:
-
+        ```perl
             use strict;
             use warnings;
 
@@ -208,14 +211,14 @@ immediate stop of test file execution if one of the tests fails.
             subtest 'my subtest with [' => sub { # subtest No. 2
               # some test function calls
             };
-
+        ```
         Taking this into consideration we can combine subtest numbers starting from the highest level and separate single levels
         by the slash sign to get the unique number of any subtest we intend to execute.
         Doing so, if we only want to execute the subtests **my deepest subtest** (its number is **1/0/0**) and
         **my subtest with \[** (its number is **2**), this can easily be done with the following command:
-
+        ```sh
             prove -v -b t/basic.t :: --subtest_number '1/0/0' --subtest_number '2'
-
+        ```
 **Test::Expander** combines all advanced possibilities provided by [Test2::V0](https://metacpan.org/pod/Test2::V0)
 with some specific functions only available in the older module [Test::More](https://metacpan.org/pod/Test::More)
 (which allows a smooth migration from [Test::More](https://metacpan.org/pod/Test::More)-based tests to
@@ -293,9 +296,9 @@ related to this class / module should be **t/**_Foo_**/**_Bar_**/**_Baz_ or **xt
 (the name of the top-level directory in this relative name - **t**, or **xt**, or **my\_test** is not important) -
 otherwise the module name cannot be put into the exported variable **$CLASS** and, if you want to use this variable,
 should be supplied as the value of **-target**:
-
+```perl
     use Test::Expander -target => 'Foo::Bar::Baz';
-
+```
 This recognition can explicitly be deactivated if the value of **-target** is **undef**, so that no class / module
 will be loaded and, correspondingly, the variables **$CLASS**, **$METHOD**, and **$METHOD\_REF** will not be exported.
 
@@ -307,9 +310,9 @@ to be tested and its reference, correspondingly, otherwise both variables are ne
 
 Also in this case evaluation and export of the variables **$METHOD** and **$METHOD\_REF** can be prevented
 by passing of **undef** as value of the option **-method**:
-
+```perl
     use Test::Expander -target => undef;
-
+```
 Finally, **Test::Expander** supports testing inside of a clean environment containing only some clearly
 specified environment variables required for the particular test.
 Names and values of these environment variables should be configured in files,
@@ -350,26 +353,26 @@ All remaining elements of the **%ENV** hash gets emptied (without localization) 
     - the cascading definition of environment variables can be used, which means that
         - during the evaluation of current line environment variables defined in the same file above can be applied.
         For example if such **.env** file contains
-
+            ```perl
                 VAR1 = 'ABC'
                 VAR2 = lc( $ENV{ VAR1 } )
-
+            ```
             and neither **VAR1** nor **VAR2** will be overwritten during the evaluation of subsequent lines in the same or other
             **.env** files, the **%ENV** hash will contain at least the following entries:
-
+            ```perl
                 VAR1 => 'ABC'
                 VAR2 => 'abc'
-
+            ```
         - during the evaluation of current line also environment variables defined in a higher-level **.env** file can be used.
         For example if **t/Foo/Bar/Baz.env** contains
-
+            ```perl
                 VAR0 = 'XYZ '
-
+            ```
             and **t/Foo/Bar/Baz/myMethod.env** contains
-
+            ```perl
                 VAR1 = 'ABC'
                 VAR2 = lc( $ENV{ VAR0 } . $ENV{ VAR1 } )
-
+            ```
             and neither **VAR0**, nor **VAR1**, nor **VAR2** will be overwritten during the evaluation of subsequent lines in the same
             or other **.env** files, the **%ENV** hash will contain at least the following entries:
 
@@ -380,11 +383,11 @@ All remaining elements of the **%ENV** hash gets emptied (without localization) 
     [string eval](https://perldoc.perl.org/functions/eval) so that
         - constant values must be quoted;
         - variables and subroutines must not be quoted:
-
+            ```perl
                 NAME_CONST = 'VALUE'
                 NAME_VAR   = $KNIB::App::MyApp::Constants::ABC
                 NAME_FUNC  = join(' ', $KNIB::App::MyApp::Constants::DEF)
-
+            ```
 All environment variables set up in this manner are logged to STDOUT
 using [note](https://metacpan.org/pod/Test2::Tools::Basic#DIAGNOSTICS).
 
@@ -463,19 +466,19 @@ In this case they are logged to STDOUT using [note](https://metacpan.org/pod/Tes
     the option **-builtin** should be used instead!)
     to verify if the testee properly reacts both on its success and failure.
     For this purpose a reasonable implementation might look as follows:
-
+    ```perl
         my $close_success;
         BEGIN {
           *CORE::GLOBAL::close = sub (*) { $close_success ? CORE::close( shift ) : 0 }
         }
 
         use Test::Expander;
-
+    ```
 - Array elements of the value supplied along with the option **-lib** are evaluated using
 [string eval](https://perldoc.perl.org/functions/eval) so that constant strings would need duplicated quotes e.g.
-
+    ```perl
         use Test::Expander -lib => [ q('my_test_lib') ];
-
+    ```
 - If the value to be assigned to an environment variable after evaluation of an **.env** file is undefined,
 such assignment is skipped.
 - If **Test::Expander** is used in one-line mode (with the **-e** option),

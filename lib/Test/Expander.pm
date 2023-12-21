@@ -2,7 +2,7 @@
 package Test::Expander;
 
 # The versioning is conform with https://semver.org
-our $VERSION = '2.3.0';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.3.2';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
@@ -35,7 +35,6 @@ use Test::Expander::Constants qw(
   %MOST_CONSTANTS_TO_EXPORT %REST_CONSTANTS_TO_EXPORT
 );
 
-# my $ok_orig = \&Test::Builder::ok;
 my $ok_orig = \&Test2::API::Context::ok;
 my ( @subtest_names, @subtest_numbers );
 
@@ -159,7 +158,6 @@ sub require_ok {
 
 sub restore_failure_handler {
   no warnings qw( redefine );
-  # *Test::Builder::ok = $ok_orig;
   *Test2::API::Context::ok = $ok_orig;
 
   return;
