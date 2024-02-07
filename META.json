@@ -43,6 +43,7 @@
             "PadWalker" : "0",
             "Path::Tiny" : "0.144",
             "Scalar::Readonly" : "0",
+            "Term::ANSIColor" : "0",
             "Test::Builder" : "0",
             "Test2::API" : "0",
             "Test2::Tools::Basic" : "0",
@@ -62,11 +63,11 @@
    "provides" : {
       "Test::Expander" : {
          "file" : "lib/Test/Expander.pm",
-         "version" : "2.3.2"
+         "version" : "2.4.0"
       },
       "Test::Expander::Constants" : {
          "file" : "lib/Test/Expander/Constants.pm",
-         "version" : "2.3.2"
+         "version" : "2.4.0"
       }
    },
    "release_status" : "stable",
@@ -80,5 +81,5 @@
          "web" : "https://github.com/jsf116/Test-Expander"
       }
    },
-   "version" : "2.3.2"
+   "version" : "2.4.0"
 }

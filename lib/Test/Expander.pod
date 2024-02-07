@@ -679,6 +679,9 @@ L<__FILE__|https://perldoc.perl.org/functions/__FILE__> can no longer be applied
 All variables mentioned above are read-only after their export.
 In this case they are logged to STDOUT using L<note|https://metacpan.org/pod/Test2::Tools::Basic#DIAGNOSTICS>.
 
+If any of the variables B<$CLASS>, B<$METHOD>, and B<$METHOD_REF> is undefined and hence not exported,
+this is reported at the very begin of test execution.
+
 =head1 CAVEATS
 
 =over 2
