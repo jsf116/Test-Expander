@@ -80,7 +80,10 @@ our @EXPORT = (
   qw( BAIL_OUT bail_on_failure dies_ok is_deeply lives_ok new_ok require_ok restore_failure_handler throws_ok use_ok ),
 );
 
-*BAIL_OUT = \&bail_out;                                     # Explicit "sub BAIL_OUT" would be untestable
+{
+  no warnings 'once';
+  *BAIL_OUT = \&bail_out;                                     # Explicit "sub BAIL_OUT" would be untestable
+}
 
 sub bail_on_failure {
   _set_failure_handler(
