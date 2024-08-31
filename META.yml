@@ -18,10 +18,10 @@ no_index:
 provides:
   Test::Expander:
     file: lib/Test/Expander.pm
-    version: '2.5.0'
+    version: '2.5.1'
   Test::Expander::Constants:
     file: lib/Test/Expander/Constants.pm
-    version: '2.5.0'
+    version: '2.5.1'
 requires:
   B: '0'
   Const::Fast: '0'
@@ -44,4 +44,4 @@ requires:
 resources:
   bugtracker: https://github.com/jsf116/Test-Expander
   repository: git://github.com/jsf116/Test-Expander.git
-version: '2.5.0'
+version: '2.5.1'
