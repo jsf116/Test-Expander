@@ -1,7 +1,7 @@
 {
    "abstract" : "Expansion of test functionalities that appear to be frequently used while testing.",
    "author" : [
-      "Jurij Fajnberg <fajnbergj@gmail.com>"
+      "Juri Fainberg <fajnbergj@gmail.com>"
    ],
    "dynamic_config" : 0,
    "generated_by" : "JSF",
@@ -41,7 +41,7 @@
             "Getopt::Long" : "0",
             "Importer" : "0",
             "PadWalker" : "0",
-            "Path::Tiny" : "0.144",
+            "Path::Tiny" : "0.150",
             "Scalar::Readonly" : "0",
             "Term::ANSIColor" : "0",
             "Test::Builder" : "0",
@@ -63,11 +63,11 @@
    "provides" : {
       "Test::Expander" : {
          "file" : "lib/Test/Expander.pm",
-         "version" : "2.5.1"
+         "version" : "2.5.2"
       },
       "Test::Expander::Constants" : {
          "file" : "lib/Test/Expander/Constants.pm",
-         "version" : "2.5.1"
+         "version" : "2.5.2"
       }
    },
    "release_status" : "stable",
@@ -81,5 +81,5 @@
          "web" : "https://github.com/jsf116/Test-Expander"
       }
    },
-   "version" : "2.5.1"
+   "version" : "2.5.2"
 }

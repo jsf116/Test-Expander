@@ -1,7 +1,7 @@
 ---
 abstract: 'Expansion of test functionalities that appear to be frequently used while testing.'
 author:
-  - 'Jurij Fajnberg <fajnbergj@gmail.com>'
+  - 'Juri Fainberg <fajnbergj@gmail.com>'
 build_requires:
   ExtUtils::MakeMaker: '0'
   Test::Simple: '0'
@@ -18,10 +18,10 @@ no_index:
 provides:
   Test::Expander:
     file: lib/Test/Expander.pm
-    version: '2.5.1'
+    version: '2.5.2'
   Test::Expander::Constants:
     file: lib/Test/Expander/Constants.pm
-    version: '2.5.1'
+    version: '2.5.2'
 requires:
   B: '0'
   Const::Fast: '0'
@@ -31,7 +31,7 @@ requires:
   Getopt::Long: '0'
   Importer: '0'
   PadWalker: '0'
-  Path::Tiny: '0.144'
+  Path::Tiny: '0.150'
   Scalar::Readonly: '0'
   Term::ANSIColor: '0'
   Test::Builder: '0'
@@ -44,4 +44,4 @@ requires:
 resources:
   bugtracker: https://github.com/jsf116/Test-Expander
   repository: git://github.com/jsf116/Test-Expander.git
-version: '2.5.1'
+version: '2.5.2'
