@@ -63,6 +63,16 @@ const our %MOST_CONSTANTS_TO_EXPORT    => (
   '$TEMP_FILE'  => sub { $_[ 0 ] },
   '$TEST_FILE'  => sub { $_[ 0 ] },
 );
+const our %OPTION_PARSER               => (
+  -bail     => 1,
+  -builtins => 1,
+  -color    => 1,
+  -lib      => 1,
+  -method   => 1,
+  -target   => 1,
+  -tempdir  => 1,
+  -tempfile => 1,
+);
 const our %REST_CONSTANTS_TO_EXPORT    => (
   '$METHOD'     => sub { $_[ 0 ] },
   '$METHOD_REF' => sub { '\&' . $_[ 1 ] . '::' . svref_2object( $_[ 0 ] )->GV->NAME },

@@ -33,7 +33,7 @@ use Test::Expander::Constants qw(
   $NOTE
   $REGEX_ANY_EXTENSION $REGEX_CLASS_HIERARCHY_LEVEL $REGEX_TOP_DIR_IN_PATH $REGEX_VERSION_NUMBER
   $TRUE
-  %COLORS %MOST_CONSTANTS_TO_EXPORT %REST_CONSTANTS_TO_EXPORT
+  %COLORS %MOST_CONSTANTS_TO_EXPORT %OPTION_PARSER %REST_CONSTANTS_TO_EXPORT
 );
 
 my $ok_orig = \&Test2::API::Context::ok;
@@ -303,7 +303,71 @@ sub _new_test_message {
   return $@ ? sprintf( $FMT_NEW_FAILED, $class, _error() ) : sprintf( $FMT_NEW_SUCCEEDED, $class, $class );
 }
 
-sub _parse_options {                                        ## no critic (ProhibitExcessComplexity)
+sub _parse_bail {
+  my ( $options, $option_name, $option_value ) = @_;
+
+  _set_failure_handler(
+    sub {
+      # uncoverable subroutine
+      bail_out( $MSG_BAIL_OUT )                             # uncoverable statement
+    }
+  );
+
+  return;
+}
+
+sub _parse_builtins {
+  my ( $options, $option_name, $option_value ) = @_;
+
+  $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+  while ( my ( $sub_name, $sub_ref ) = each( %$option_value ) ) {
+    $DIE->( $FMT_INVALID_VALUE, $option_name . "->{ $sub_name }", $sub_ref ) if ref( $sub_ref ) ne 'CODE';
+  }
+  $options->{ $option_name } = $option_value;
+
+  return;
+}
+
+sub _parse_color {
+  my ( $options, $option_name, $option_value ) = @_;
+
+  keys( %colors );
+  while ( my ( $color_name, $color_value ) = each( %colors ) ) {
+    if ( exists( $option_value->{ $color_name } ) ) {
+      my $requested_color = $option_value->{ $color_name };
+      if ( defined( $requested_color ) ) {
+        eval { color( $requested_color ) };
+        $DIE->( $FMT_INVALID_COLOR, $requested_color, $color_name ) if $@;
+      }
+      $colors{ $color_name } = $requested_color;
+    }
+  }
+  foreach my $color_name ( keys( %$option_value ) ) {
+    $DIE->( $FMT_UNKNOWN_OPTION, $option_name, $color_name ) unless exists( $colors{ $color_name } );
+  }
+
+  return;
+}
+
+sub _parse_lib {
+  my ( $options, $option_name, $option_value ) = @_;
+
+  $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'ARRAY';
+  $options->{ $option_name } = $option_value;
+
+  return;
+}
+
+sub _parse_method {
+  my ( $options, $option_name, $option_value ) = @_;
+
+  $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value );
+  $METHOD = $options->{ $option_name } = $option_value;
+
+  return;
+}
+
+sub _parse_options {
   my ( $exports, $test_file ) = @_;
 
   my $options = {};
@@ -311,60 +375,38 @@ sub _parse_options {                                        ## no critic (Prohib
     $DIE->( $FMT_UNKNOWN_OPTION, $option_name, shift( @$exports ) // '' ) if $option_name !~ /^-\w/;
 
     my $option_value = shift( @$exports );
-    if ( $option_name eq '-bail' ) {                        ## no critic (ProhibitCascadingIfElse)
-      _set_failure_handler(
-        sub {
-          # uncoverable subroutine
-          bail_out( $MSG_BAIL_OUT )                         # uncoverable statement
-        }
-      );
-    }
-    elsif ( $option_name eq '-builtins' ) {
-      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
-      while ( my ( $sub_name, $sub_ref ) = each( %$option_value ) ) {
-        $DIE->( $FMT_INVALID_VALUE, $option_name . "->{ $sub_name }", $sub_ref ) if ref( $sub_ref ) ne 'CODE';
-      }
-      $options->{ $option_name } = $option_value;
-    }
-    elsif ( $option_name eq '-color' ) {
-      while ( my ( $color_name, $color_value ) = each( %colors ) ) {
-        if ( exists( $option_value->{ $color_name } ) ) {
-          my $requested_color = $option_value->{ $color_name };
-          $DIE->( $FMT_INVALID_COLOR, $requested_color, $color_name )
-            if defined( $requested_color ) && !defined( color( $requested_color ) );
-          $colors{ $color_name } = $requested_color;
-        }
-      }
-      foreach my $color_name ( keys( %$option_value ) ) {
-        $DIE->( $FMT_UNKNOWN_OPTION, $option_name, $color_name ) unless exists( $colors{ $color_name } );
-      }
-    }
-    elsif ( $option_name eq '-lib' ) {
-      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'ARRAY';
-      $options->{ $option_name } = $option_value;
-    }
-    elsif ( $option_name eq '-method' ) {
-      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value );
-      $METHOD = $options->{ $option_name } = $option_value;
-    }
-    elsif ( $option_name eq '-target' ) {
-      $options->{ $option_name } = $option_value;
-    }
-    elsif ( $option_name eq '-tempdir' ) {
-      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
-      $TEMP_DIR = tempdir( CLEANUP => 1, %$option_value );
-    }
-    elsif ( $option_name eq '-tempfile' ) {
-      $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
-      my $file_handle;
-      ( $file_handle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$option_value );
-    }
-    else {
-      $options->{ $option_name } = $option_value;
-    }
+    my $parser       = exists( $OPTION_PARSER{ $option_name } ) ? '_parse_' . substr( $option_name, 1 ) : '_take_over';
+    { no strict qw( refs ); $parser->( $options, $option_name, $option_value ) }
   }
 
   return _determine_testee( $options, $test_file );
+}
+
+sub _parse_target {
+  my ( $options, $option_name, $option_value ) = @_;
+
+  $options->{ $option_name } = $option_value;
+
+  return;
+}
+
+sub _parse_tempdir {
+  my ( $options, $option_name, $option_value ) = @_;
+
+  $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+  $TEMP_DIR = tempdir( CLEANUP => 1, %$option_value );
+
+  return;
+}
+
+sub _parse_tempfile {
+  my ( $options, $option_name, $option_value ) = @_;
+
+    $DIE->( $FMT_INVALID_VALUE, $option_name, $option_value ) if ref( $option_value ) ne 'HASH';
+    my $file_handle;
+    ( $file_handle, $TEMP_FILE ) = tempfile( UNLINK => 1, %$option_value );
+
+  return;
 }
 
 sub _read_env_file {
@@ -485,6 +527,14 @@ sub _subtest_conditional {
     $ctx->skip( 'forced by ' . __PACKAGE__ );
     $ctx->release;
   }
+
+  return;
+}
+
+sub _take_over {
+  my ( $options, $option_name, $option_value ) = @_;
+
+  $options->{ $option_name } = $option_value;
 
   return;
 }
