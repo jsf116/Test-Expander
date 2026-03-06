@@ -44,12 +44,14 @@ const our $FMT_USE_IMPLEMENTATION      => 'package %s; use %s%s; 1';
 
 const our $MSG_BAIL_OUT                => 'Test failed.';
 const our $MSG_ERROR_WAS               => ' Error was: ';
+const our $MSG_NO_TABLE_HEADER         => "No header of test table detected!\n";
 const our $MSG_UNEXPECTED_EXCEPTION    => 'Unexpectedly caught exception: ';
 
 const our $NOTE                        => sub { my ( $format, @args ) = @_; note( sprintf( $format, @args ) ) };
 
 const our $REGEX_ANY_EXTENSION         => qr/ \. [^.]+ $/x;
 const our $REGEX_CLASS_HIERARCHY_LEVEL => qr/^( \w+ ) (?: :: ( .+ ) )?/x;
+const our $REGEX_TABLE_SEPARATOR       => qr/\s*\|\s*/;
 const our $REGEX_TOP_DIR_IN_PATH       => qr{^ ( [^/]+ ) }x;
 const our $REGEX_VERSION_NUMBER        => qr/^ \d+ (?: \. \d+ )* $/x;
 

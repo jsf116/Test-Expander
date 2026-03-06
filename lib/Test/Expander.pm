@@ -29,9 +29,10 @@ use Test::Expander::Constants qw(
   $FMT_INVALID_COLOR $FMT_INVALID_DIRECTORY $FMT_INVALID_ENV_ENTRY $FMT_INVALID_VALUE $FMT_INVALID_SUBTEST_NUMBER
   $FMT_KEEP_ENV_VAR $FMT_NEW_FAILED $FMT_NEW_SUCCEEDED $FMT_REPLACEMENT $FMT_REQUIRE_DESCRIPTION
   $FMT_REQUIRE_IMPLEMENTATION $FMT_SEARCH_PATTERN $FMT_SET_ENV_VAR $FMT_SET_TO $FMT_SKIP_ENV_VAR $FMT_UNSET_VAR
-  $FMT_UNKNOWN_OPTION $FMT_USE_DESCRIPTION $FMT_USE_IMPLEMENTATION $MSG_BAIL_OUT $MSG_ERROR_WAS $MSG_UNEXPECTED_EXCEPTION
+  $FMT_UNKNOWN_OPTION $FMT_USE_DESCRIPTION $FMT_USE_IMPLEMENTATION
+  $MSG_BAIL_OUT $MSG_ERROR_WAS $MSG_NO_TABLE_HEADER $MSG_UNEXPECTED_EXCEPTION
   $NOTE
-  $REGEX_ANY_EXTENSION $REGEX_CLASS_HIERARCHY_LEVEL $REGEX_TOP_DIR_IN_PATH $REGEX_VERSION_NUMBER
+  $REGEX_ANY_EXTENSION $REGEX_CLASS_HIERARCHY_LEVEL $REGEX_TABLE_SEPARATOR $REGEX_TOP_DIR_IN_PATH $REGEX_VERSION_NUMBER
   $TRUE
   %COLORS %MOST_CONSTANTS_TO_EXPORT %OPTION_PARSER %REST_CONSTANTS_TO_EXPORT
 );
@@ -166,6 +167,34 @@ sub restore_failure_handler {
   *Test2::API::Context::ok = $ok_orig;
 
   return;
+}
+
+sub test_table {
+  chomp( my @data = @_ );
+
+  my ( $header, $title_inline ) = _test_table_header( \@data );
+
+  my %test_table;
+  while ( my $title = shift( @data ) ) {
+    next if $title =~ /^[+\-$REGEX_TABLE_SEPARATOR]-/;
+    my @line;
+    if ( $title_inline ) {
+      ( undef, $title, @line ) = split( $REGEX_TABLE_SEPARATOR, $title );
+      unshift( @line, undef );
+    }
+    else {
+      ( undef, $title ) = split( $REGEX_TABLE_SEPARATOR, $title );
+      @line             = split( $REGEX_TABLE_SEPARATOR, shift( @data ) );
+    }
+
+    foreach my $index ( 1 .. $#$header ) {
+      my $value = $line[ $index ] // '';
+      ## no critic (ProhibitStringyEval)
+      $test_table{ $title }->{ $header->[ $index ] } = eval( $value );
+    }
+  }
+
+  return %test_table;
 }
 
 sub throws_ok ( &$;$ ) {
@@ -537,6 +566,28 @@ sub _take_over {
   $options->{ $option_name } = $option_value;
 
   return;
+}
+
+sub _test_table_header {
+  my ( $data ) = @_;
+
+  my $header = [];
+  while ( my $titles = shift( @$data ) ) {
+    @$header ? last : next if $titles =~ /^[+\-$REGEX_TABLE_SEPARATOR]-/;
+    my @line = split( $REGEX_TABLE_SEPARATOR, $titles );
+    foreach my $index ( 1 .. $#line ) {
+      $line    [ $index ] = ' ' if $line[ $index ] eq '';
+      $header->[ $index ] = defined( $header->[ $index ] ) ? $header->[ $index ] . $line[ $index ] : $line[ $index ];
+    }
+  }
+  die( $MSG_NO_TABLE_HEADER ) unless @$header;
+
+  $header->[ 0 ] = '';
+  s/^\s+|\s+$//g foreach @$header;
+  my $title_in_line = $header->[ 1 ] eq '';
+  shift( @$header ) if $title_in_line;
+
+  return ( $header, $title_in_line );
 }
 
 sub _use_imports {
