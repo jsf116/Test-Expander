@@ -27,7 +27,7 @@ use Test2::Tools::Subtest;
 use Test::Expander::Constants qw(
   $DIE $FALSE
   $FMT_INVALID_COLOR $FMT_INVALID_DIRECTORY $FMT_INVALID_ENV_ENTRY $FMT_INVALID_VALUE $FMT_INVALID_SUBTEST_NUMBER
-  $FMT_KEEP_ENV_VAR $FMT_NEW_FAILED $FMT_NEW_SUCCEEDED $FMT_REPLACEMENT $FMT_REQUIRE_DESCRIPTION
+  $FMT_MISSING_TDT $FMT_KEEP_ENV_VAR $FMT_NEW_FAILED $FMT_NEW_SUCCEEDED $FMT_REPLACEMENT $FMT_REQUIRE_DESCRIPTION
   $FMT_REQUIRE_IMPLEMENTATION $FMT_SEARCH_PATTERN $FMT_SET_ENV_VAR $FMT_SET_TO $FMT_SKIP_ENV_VAR $FMT_UNSET_VAR
   $FMT_UNKNOWN_OPTION $FMT_USE_DESCRIPTION $FMT_USE_IMPLEMENTATION
   $MSG_BAIL_OUT $MSG_ERROR_WAS $MSG_NO_TABLE_HEADER $MSG_UNEXPECTED_EXCEPTION
@@ -170,7 +170,8 @@ sub restore_failure_handler {
 }
 
 sub test_table {
-  chomp( my @data = @_ );
+  my $data = @_ ? shift : _load_tdt();
+  chomp( my @data = @$data );
 
   my ( $header, $title_inline ) = _test_table_header( \@data );
 
@@ -311,6 +312,14 @@ sub _export_symbols {
   }
 
   return;
+}
+
+sub _load_tdt {
+  my $tdt_file   = $TEST_FILE =~ s/$REGEX_ANY_EXTENSION/.tdt/r;
+  my $test_table = eval { path( $tdt_file)->slurp };
+  $DIE->( $FMT_MISSING_TDT, $tdt_file, $@ =~ s/\n//gr =~ s/ at .+//ir ) if $@;
+
+  return [ split( m{$/}, $test_table ) ];
 }
 
 sub _mock_builtins {

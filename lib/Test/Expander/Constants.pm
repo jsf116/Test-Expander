@@ -28,6 +28,7 @@ const our $FMT_INVALID_ENV_ENTRY       => "Erroneous line %d of '%s' containing 
 const our $FMT_INVALID_VALUE           => "Option '%s' passed along with invalid value '%s'\n";
 const our $FMT_INVALID_SUBTEST_NUMBER  => "\nInvalid subtest number: '%s'\n";
 const our $FMT_KEEP_ENV_VAR            => "Keep environment variable '%s' containing '%s' because it is not reassigned in file '%s'";
+const our $FMT_MISSING_TDT             => "Cannot read '%s' for table driven testing: %s\n";
 const our $FMT_NEW_FAILED              => '%s->new died.%s';
 const our $FMT_NEW_SUCCEEDED           => "An object of class '%s' isa '%s'";
 const our $FMT_REPLACEMENT             => $EXCEPTION_PREFIX . '%s line %s.';
