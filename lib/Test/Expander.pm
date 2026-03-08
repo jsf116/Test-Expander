@@ -2,7 +2,7 @@
 package Test::Expander;
 
 # The versioning is conform with https://semver.org
-our $VERSION = '2.5.2';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
+our $VERSION = '2.6.0';                                     ## no critic (RequireUseStrict, RequireUseWarnings)
 
 use strict;
 use warnings
@@ -79,6 +79,7 @@ our @EXPORT = (
   qw( tempdir tempfile ),
   qw( cwd path ),
   qw( BAIL_OUT bail_on_failure dies_ok is_deeply lives_ok new_ok require_ok restore_failure_handler throws_ok use_ok ),
+  qw( test_table ),
 );
 
 {
