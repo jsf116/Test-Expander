@@ -27,7 +27,7 @@
   use Test::Expander -srand => time;
 
   # Class is supplied explicitly, tries to automatically determine method / subroutine to be tested,
-  # creates a temporary directory with name corresponing to the template supplied, does not create temporary file:
+  # creates a temporary directory with name corresponding to the template supplied, does not create temporary file:
   use Test::Expander -target => 'My::Class', -tempdir => { TEMPLATE => 'my_dir.XXXXXXXX' };
 
   # Does not try to determine, which class / module and method / subroutine are to be tested,
@@ -295,7 +295,7 @@ This is exactly why the [table driven testing](https://en.wikipedia.org/wiki/Dat
             |      0     |   0    |   0    |
             +------------------------------+
 
-- The frequent necessity of introduction of temporary directory and / or temporary file usually leads to the usage of modules [File::Temp::tempdir](https://metacpan.org/pod/File::Temp) or [Path::Tiny](https://metacpan.org/pod/Path::Tiny) providing the methods / funtions **tempdir** and **tempfile**.
+- The frequent necessity of introduction of temporary directory and / or temporary file usually leads to the usage of modules [File::Temp::tempdir](https://metacpan.org/pod/File::Temp) or [Path::Tiny](https://metacpan.org/pod/Path::Tiny) providing the methods / functions **tempdir** and **tempfile**.
 
     This, however, can significantly be simplified (and the size of test file can be reduced) requesting such introduction via the options supported by **Test::Expander**:
     ```perl
@@ -410,7 +410,7 @@ The term "partially" means that the option `--subtest` can only be applied to se
         ```
 **Test::Expander** combines all advanced possibilities provided by [Test2::V1](https://metacpan.org/pod/Test2::V1) with some specific functions only available in the older module [Test::More](https://metacpan.org/pod/Test::More) (which allows a smooth migration from [Test::More](https://metacpan.org/pod/Test::More)-based tests to [Test2::V1](https://metacpan.org/pod/Test2::V1)-based ones) and handy functions from some other modules often used in test suites.
 
-Furthermore, this module allows to automatically recognize the class / module to be tested (see variable **$CLASS** below) so that in contrast to [Test2::V1](https://metacpan.org/pod/Test2::V1) you do not need to specify this explicitly if the path to the test file is in accordance with the name of class / module to be tested i.e. file **t/Foo/Bar/baz.t** corresponds to class / module **Foo::Bar**.
+Furthermore, this module allows automatic recognition of the class / module to be tested (see variable **$CLASS** below) so that in contrast to [Test2::V1](https://metacpan.org/pod/Test2::V1) you do not need to specify this explicitly if the path to the test file is in accordance with the name of class / module to be tested i.e. file **t/Foo/Bar/baz.t** corresponds to class / module **Foo::Bar**.
 
 If such automated recognition is not intended, this can be deactivated by explicitly supplied undefined class / module name along with the option `-target`.
 
